@@ -20,6 +20,7 @@
     "@trpc/client": "next",
     "@trpc/react-query": "next",
     "@trpc/server": "next",
+    "classnames": "^2.5.1",
     "drizzle-orm": "^0.30.10",
     "geist": "^1.3.0",
     "next": "^14.2.1",
@@ -27,6 +28,8 @@
     "react-dom": "^18.3.0",
     "server-only": "^0.0.1",
     "superjson": "^2.2.1",
+    "ts-shader-loader": "^2.0.2",
+    "wgpu-matrix": "^3.0.1",
     "zod": "^3.23.3"
   },
   "devDependencies": {
@@ -36,6 +39,7 @@
     "@types/react-dom": "^18.2.19",
     "@typescript-eslint/eslint-plugin": "^7.1.1",
     "@typescript-eslint/parser": "^7.1.1",
+    "@webgpu/types": "^0.1.43",
     "drizzle-kit": "^0.21.4",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.1.3",
