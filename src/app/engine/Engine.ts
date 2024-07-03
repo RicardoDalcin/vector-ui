@@ -1,6 +1,55 @@
+import { Camera } from "./entities/Camera";
+import { QuadGeometry } from "./QuadGeometry";
+import { QuadMesh } from "./QuadMesh";
 import shader from "./shader.wgsl";
 import { TriangleMesh } from "./TriangleMesh";
 import { mat4, vec3 } from "wgpu-matrix";
+
+class BufferUtil {
+  public static createVertexBuffer(
+    device: GPUDevice,
+    data: Float32Array,
+  ): GPUBuffer {
+    const buffer = device.createBuffer({
+      size: data.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true,
+    });
+
+    new Float32Array(buffer.getMappedRange()).set(data);
+    buffer.unmap();
+
+    return buffer;
+  }
+
+  public static createIndexBuffer(
+    device: GPUDevice,
+    data: Uint16Array,
+  ): GPUBuffer {
+    const buffer = device.createBuffer({
+      size: data.byteLength,
+      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true,
+    });
+
+    new Uint16Array(buffer.getMappedRange()).set(data);
+    buffer.unmap();
+
+    return buffer;
+  }
+
+  public static createUniformBuffer(
+    device: GPUDevice,
+    data: Float32Array,
+  ): GPUBuffer {
+    const buffer = device.createBuffer({
+      size: data.byteLength,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+
+    return buffer;
+  }
+}
 
 export class Renderer {
   canvas: HTMLCanvasElement;
@@ -15,10 +64,15 @@ export class Renderer {
   pipeline!: GPURenderPipeline;
 
   triangleMesh!: TriangleMesh;
+  quadGeometry!: QuadGeometry;
+  quadMesh!: QuadMesh;
   t = 0;
+
+  camera: Camera;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
+    this.camera = new Camera(canvas.clientWidth, canvas.clientHeight);
   }
 
   async initialize() {
@@ -48,20 +102,24 @@ export class Renderer {
 
   createAssets() {
     this.triangleMesh = new TriangleMesh(this.device);
+    this.quadGeometry = new QuadGeometry();
+    this.quadMesh = new QuadMesh(this.device);
   }
 
   async makePipeline() {
-    this.uniformBuffer = this.device.createBuffer({
-      size: 16 * 4 * 3,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
+    this.uniformBuffer = BufferUtil.createUniformBuffer(
+      this.device,
+      new Float32Array(16),
+    );
 
     const bindGroupLayout = this.device.createBindGroupLayout({
       entries: [
         {
           binding: 0,
           visibility: GPUShaderStage.VERTEX,
-          buffer: {},
+          buffer: {
+            type: "uniform",
+          },
         },
       ],
     });
@@ -89,7 +147,7 @@ export class Renderer {
           code: shader,
         }),
         entryPoint: "vs_main",
-        buffers: [this.triangleMesh.bufferLayout],
+        buffers: [this.quadMesh.bufferLayout],
       },
       fragment: {
         module: this.device.createShaderModule({
@@ -109,24 +167,17 @@ export class Renderer {
   }
 
   render() {
-    this.t += 0.05;
+    // this.t += 0.05;
 
-    if (this.t > Math.PI * 2) {
-      this.t -= Math.PI * 2;
-    }
+    // if (this.t > Math.PI * 2) {
+    //   this.t -= Math.PI * 2;
+    // }
 
+    const cameraMatrix = this.camera.getCameraMatrix();
     const model = mat4.rotate(mat4.identity(), [0, 0, 1], this.t);
-    const view = mat4.lookAt([-2, 0, 2], [0, 0, 0], [0, 0, 1]);
-    const projection = mat4.perspective(
-      Math.PI / 4,
-      this.canvas.clientWidth / this.canvas.clientHeight,
-      0.1,
-      10,
-    );
 
     const modelViewProjection = mat4.create();
-    mat4.multiply(projection, view, modelViewProjection);
-    mat4.multiply(modelViewProjection, model, modelViewProjection);
+    mat4.multiply(cameraMatrix, model, modelViewProjection);
 
     const asArrayBuffer = new Float32Array(modelViewProjection);
 
@@ -136,6 +187,16 @@ export class Renderer {
       asArrayBuffer.buffer,
       asArrayBuffer.byteOffset,
       asArrayBuffer.byteLength,
+    );
+
+    const verticesBuffer = BufferUtil.createVertexBuffer(
+      this.device,
+      this.quadGeometry.vertices,
+    );
+
+    const indicesBuffer = BufferUtil.createIndexBuffer(
+      this.device,
+      this.quadGeometry.indices,
     );
 
     const commandEncoder = this.device.createCommandEncoder();
@@ -151,10 +212,12 @@ export class Renderer {
         },
       ],
     });
+
     passEncoder.setPipeline(this.pipeline);
+    passEncoder.setIndexBuffer(indicesBuffer, "uint16");
+    passEncoder.setVertexBuffer(0, verticesBuffer);
     passEncoder.setBindGroup(0, this.bindGroup);
-    passEncoder.setVertexBuffer(0, this.triangleMesh.buffer);
-    passEncoder.draw(3);
+    passEncoder.drawIndexed(6);
     passEncoder.end();
 
     this.device.queue.submit([commandEncoder.finish()]);
