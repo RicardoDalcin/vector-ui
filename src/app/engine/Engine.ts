@@ -51,6 +51,26 @@ class BufferUtil {
   }
 }
 
+const setupCameraEvents = (camera: Camera) => {
+  window.addEventListener("keydown", (event) => {
+    console.log(event.key, event.ctrlKey);
+    const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+    const isControlPressed = isMac ? event.metaKey : event.ctrlKey;
+
+    console.log(isMac, isControlPressed);
+
+    if ((event.key === "=" || event.key === "+") && isControlPressed) {
+      event.preventDefault();
+      camera.zoomIn();
+    }
+
+    if (event.key === "-" && isControlPressed) {
+      event.preventDefault();
+      camera.zoomOut();
+    }
+  });
+};
+
 export class Renderer {
   canvas: HTMLCanvasElement;
 
@@ -72,7 +92,23 @@ export class Renderer {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    this.camera = new Camera(canvas.clientWidth, canvas.clientHeight);
+    this.canvas.width = this.canvas.clientWidth * window.devicePixelRatio;
+    this.canvas.height = this.canvas.clientHeight * window.devicePixelRatio;
+
+    this.camera = new Camera(
+      canvas.width,
+      canvas.height,
+      window.devicePixelRatio,
+    );
+
+    setupCameraEvents(this.camera);
+
+    window.addEventListener("resize", () => {
+      this.canvas.width = this.canvas.clientWidth * window.devicePixelRatio;
+      this.canvas.height = this.canvas.clientHeight * window.devicePixelRatio;
+      this.camera.clientWidth = this.canvas.width;
+      this.camera.clientHeight = this.canvas.height;
+    });
   }
 
   async initialize() {
@@ -191,12 +227,12 @@ export class Renderer {
 
     const verticesBuffer = BufferUtil.createVertexBuffer(
       this.device,
-      this.quadGeometry.vertices,
+      this.quadMesh.vertices,
     );
 
     const indicesBuffer = BufferUtil.createIndexBuffer(
       this.device,
-      this.quadGeometry.indices,
+      this.quadMesh.indices,
     );
 
     const commandEncoder = this.device.createCommandEncoder();

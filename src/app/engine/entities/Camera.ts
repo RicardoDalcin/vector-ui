@@ -7,12 +7,18 @@ export class Camera {
   zoom: number;
   clientWidth: number;
   clientHeight: number;
+  devicePixelRatio: number;
 
-  constructor(clientWidth: number, clientHeight: number) {
+  constructor(
+    clientWidth: number,
+    clientHeight: number,
+    devicePixelRatio: number,
+  ) {
     this.position = vec2.create(0, 0);
     this.zoom = 1;
     this.clientWidth = clientWidth;
     this.clientHeight = clientHeight;
+    this.devicePixelRatio = devicePixelRatio;
   }
 
   pan(delta: Vec2) {
@@ -29,7 +35,23 @@ export class Camera {
 
   getViewMatrix() {
     const viewMatrix = mat4.lookAt([0, 0, 1], [0, 0, 0], [0, 1, 0]);
-    return viewMatrix;
+    const translationMatrix = mat4.translation([
+      this.position[0] ?? 0,
+      this.position[1] ?? 0,
+      0,
+    ]);
+    const scalingMatrix = mat4.scaling([
+      this.zoom * this.devicePixelRatio,
+      this.zoom * this.devicePixelRatio,
+      1,
+    ]);
+
+    const view = mat4.multiply(
+      translationMatrix,
+      mat4.multiply(scalingMatrix, viewMatrix),
+    );
+
+    return view;
   }
 
   getProjectionMatrix() {

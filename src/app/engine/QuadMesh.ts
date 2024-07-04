@@ -1,38 +1,42 @@
 export class QuadMesh {
   buffer: GPUBuffer;
   bufferLayout: GPUVertexBufferLayout;
+  vertices: Float32Array;
+  indices: Uint16Array;
 
   constructor(device: GPUDevice) {
-    const x = 0;
-    const y = 0;
+    const x = 100;
+    const y = 100;
 
-    const w = 100;
-    const h = 100;
+    const w = 250;
+    const h = 250;
 
     const topLeft = [x + w, y + h, 0.0, 0.0, 1.0, 1.0, 1.0];
     const topRight = [x, y + h, 1.0, 0.0, 1.0, 1.0, 1.0];
     const bottomLeft = [x, y, 0.0, 1.0, 1.0, 1.0, 1.0];
     const bottomRight = [x + w, y, 1.0, 1.0, 1.0, 1.0, 1.0];
 
-    const vertices: Float32Array = new Float32Array([
+    this.vertices = new Float32Array([
       ...bottomLeft,
       ...bottomRight,
       ...topLeft,
       ...topRight,
     ]);
 
+    this.indices = new Uint16Array([0, 1, 2, 2, 3, 0]);
+
     const usage: GPUBufferUsageFlags =
       GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST;
 
     const descriptor: GPUBufferDescriptor = {
-      size: vertices.byteLength,
+      size: this.vertices.byteLength,
       usage,
       mappedAtCreation: true,
     };
 
     this.buffer = device.createBuffer(descriptor);
 
-    new Float32Array(this.buffer.getMappedRange()).set(vertices);
+    new Float32Array(this.buffer.getMappedRange()).set(this.vertices);
     this.buffer.unmap();
 
     this.bufferLayout = {
