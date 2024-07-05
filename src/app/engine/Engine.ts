@@ -5,6 +5,13 @@ import shader from "./shader.wgsl";
 import { TriangleMesh } from "./TriangleMesh";
 import { mat4, vec3 } from "wgpu-matrix";
 
+const EventUtils = {
+  isControlPressed: (event: KeyboardEvent | WheelEvent) => {
+    const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+    return isMac ? event.metaKey : event.ctrlKey;
+  },
+};
+
 class BufferUtil {
   public static createVertexBuffer(
     device: GPUDevice,
@@ -51,26 +58,6 @@ class BufferUtil {
   }
 }
 
-const setupCameraEvents = (camera: Camera) => {
-  window.addEventListener("keydown", (event) => {
-    console.log(event.key, event.ctrlKey);
-    const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
-    const isControlPressed = isMac ? event.metaKey : event.ctrlKey;
-
-    console.log(isMac, isControlPressed);
-
-    if ((event.key === "=" || event.key === "+") && isControlPressed) {
-      event.preventDefault();
-      camera.zoomIn();
-    }
-
-    if (event.key === "-" && isControlPressed) {
-      event.preventDefault();
-      camera.zoomOut();
-    }
-  });
-};
-
 export class Renderer {
   canvas: HTMLCanvasElement;
 
@@ -90,6 +77,8 @@ export class Renderer {
 
   camera: Camera;
 
+  isMouseDown = false;
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.canvas.width = this.canvas.clientWidth * window.devicePixelRatio;
@@ -101,13 +90,69 @@ export class Renderer {
       window.devicePixelRatio,
     );
 
-    setupCameraEvents(this.camera);
+    this.setupCameraEvents(this.camera);
 
     window.addEventListener("resize", () => {
       this.canvas.width = this.canvas.clientWidth * window.devicePixelRatio;
       this.canvas.height = this.canvas.clientHeight * window.devicePixelRatio;
       this.camera.clientWidth = this.canvas.width;
       this.camera.clientHeight = this.canvas.height;
+    });
+  }
+
+  setupCameraEvents(camera: Camera) {
+    window.addEventListener("keydown", (event) => {
+      const isControlPressed = EventUtils.isControlPressed(event);
+
+      if ((event.key === "=" || event.key === "+") && isControlPressed) {
+        event.preventDefault();
+        camera.zoomIn();
+      }
+
+      if (event.key === "-" && isControlPressed) {
+        event.preventDefault();
+        camera.zoomOut();
+      }
+    });
+
+    window.addEventListener(
+      "wheel",
+      (event) => {
+        const isControlPressed = EventUtils.isControlPressed(event);
+
+        if (isControlPressed) {
+          event.preventDefault();
+
+          if (event.deltaY < 0) {
+            camera.zoomIn();
+          }
+
+          if (event.deltaY > 0) {
+            camera.zoomOut();
+          }
+        }
+      },
+      { passive: false },
+    );
+
+    window.addEventListener("mousedown", (event) => {
+      if (event.button === 0) {
+        event.preventDefault();
+        this.isMouseDown = true;
+      }
+    });
+
+    window.addEventListener("mouseup", (event) => {
+      if (event.button === 0) {
+        event.preventDefault();
+        this.isMouseDown = false;
+      }
+    });
+
+    window.addEventListener("mousemove", (event) => {
+      if (this.isMouseDown) {
+        camera.pan(vec3.create(event.movementX, event.movementY, 0));
+      }
     });
   }
 

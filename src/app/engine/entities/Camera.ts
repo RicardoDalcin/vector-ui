@@ -22,7 +22,7 @@ export class Camera {
   }
 
   pan(delta: Vec2) {
-    vec2.add(this.position, this.position, delta);
+    this.position = vec2.add(this.position, delta);
   }
 
   zoomIn() {
