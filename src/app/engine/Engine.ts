@@ -3,14 +3,7 @@ import { QuadGeometry } from "./QuadGeometry";
 import { QuadMesh } from "./QuadMesh";
 import shader from "./shader.wgsl";
 import { TriangleMesh } from "./TriangleMesh";
-import { mat4, vec3 } from "wgpu-matrix";
-
-const EventUtils = {
-  isControlPressed: (event: KeyboardEvent | WheelEvent) => {
-    const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
-    return isMac ? event.metaKey : event.ctrlKey;
-  },
-};
+import { mat4, type Vec2 } from "wgpu-matrix";
 
 class BufferUtil {
   public static createVertexBuffer(
@@ -58,24 +51,37 @@ class BufferUtil {
   }
 }
 
-export class Renderer {
-  canvas: HTMLCanvasElement;
+export type MouseEventOptions = {
+  button: "left" | "right" | "middle";
+  position: Vec2;
+};
 
-  adapter!: GPUAdapter;
-  device!: GPUDevice;
-  context!: GPUCanvasContext;
-  format!: GPUTextureFormat;
+export type MouseMoveOptions = {
+  position: Vec2;
+  movement: Vec2;
+};
 
-  uniformBuffer!: GPUBuffer;
-  bindGroup!: GPUBindGroup;
-  pipeline!: GPURenderPipeline;
+interface Drawable {
+  draw(): void;
+}
 
-  triangleMesh!: TriangleMesh;
-  quadGeometry!: QuadGeometry;
-  quadMesh!: QuadMesh;
-  t = 0;
+export class Engine {
+  private canvas: HTMLCanvasElement;
 
-  camera: Camera;
+  private adapter!: GPUAdapter;
+  private device!: GPUDevice;
+  private context!: GPUCanvasContext;
+  private format!: GPUTextureFormat;
+
+  private uniformBuffer!: GPUBuffer;
+  private bindGroup!: GPUBindGroup;
+  private pipeline!: GPURenderPipeline;
+
+  private triangleMesh!: TriangleMesh;
+  private quadGeometry!: QuadGeometry;
+  private quadMesh!: QuadMesh;
+
+  private camera: Camera;
 
   isMouseDown = false;
 
@@ -89,74 +95,42 @@ export class Renderer {
       canvas.height,
       window.devicePixelRatio,
     );
-
-    this.setupCameraEvents(this.camera);
-
-    window.addEventListener("resize", () => {
-      this.canvas.width = this.canvas.clientWidth * window.devicePixelRatio;
-      this.canvas.height = this.canvas.clientHeight * window.devicePixelRatio;
-      this.camera.clientWidth = this.canvas.width;
-      this.camera.clientHeight = this.canvas.height;
-    });
   }
 
-  setupCameraEvents(camera: Camera) {
-    window.addEventListener("keydown", (event) => {
-      const isControlPressed = EventUtils.isControlPressed(event);
-
-      if ((event.key === "=" || event.key === "+") && isControlPressed) {
-        event.preventDefault();
-        camera.zoomIn();
-      }
-
-      if (event.key === "-" && isControlPressed) {
-        event.preventDefault();
-        camera.zoomOut();
-      }
-    });
-
-    window.addEventListener(
-      "wheel",
-      (event) => {
-        const isControlPressed = EventUtils.isControlPressed(event);
-
-        if (isControlPressed) {
-          event.preventDefault();
-
-          if (event.deltaY < 0) {
-            camera.zoomIn();
-          }
-
-          if (event.deltaY > 0) {
-            camera.zoomOut();
-          }
-        }
-      },
-      { passive: false },
-    );
-
-    window.addEventListener("mousedown", (event) => {
-      if (event.button === 0) {
-        event.preventDefault();
-        this.isMouseDown = true;
-      }
-    });
-
-    window.addEventListener("mouseup", (event) => {
-      if (event.button === 0) {
-        event.preventDefault();
-        this.isMouseDown = false;
-      }
-    });
-
-    window.addEventListener("mousemove", (event) => {
-      if (this.isMouseDown) {
-        camera.pan(vec3.create(event.movementX, event.movementY, 0));
-      }
-    });
+  public resize() {
+    this.canvas.width = this.canvas.clientWidth * window.devicePixelRatio;
+    this.canvas.height = this.canvas.clientHeight * window.devicePixelRatio;
+    this.camera.clientWidth = this.canvas.width;
+    this.camera.clientHeight = this.canvas.height;
   }
 
-  async initialize() {
+  public zoomIn() {
+    this.camera.zoomIn();
+  }
+
+  public zoomOut() {
+    this.camera.zoomOut();
+  }
+
+  public onMouseDown(options: MouseEventOptions) {
+    if (options.button === "left") {
+      this.isMouseDown = true;
+    }
+  }
+
+  public onMouseUp(options: MouseEventOptions) {
+    if (options.button === "left") {
+      this.isMouseDown = false;
+    }
+  }
+
+  public onMouseMove(options: MouseMoveOptions) {
+    if (this.isMouseDown) {
+      this.camera.pan(options.movement);
+    }
+  }
+
+  public async initialize() {
     await this.setupDevice();
     this.createAssets();
     await this.makePipeline();
@@ -164,7 +138,7 @@ export class Renderer {
     this.render();
   }
 
-  async setupDevice() {
+  private async setupDevice() {
     if (!navigator.gpu) {
       throw "Your current browser does not support WebGPU!";
     }
@@ -181,13 +155,13 @@ export class Renderer {
     });
   }
 
-  createAssets() {
+  private createAssets() {
     this.triangleMesh = new TriangleMesh(this.device);
     this.quadGeometry = new QuadGeometry();
     this.quadMesh = new QuadMesh(this.device);
   }
 
-  async makePipeline() {
+  private async makePipeline() {
     this.uniformBuffer = BufferUtil.createUniformBuffer(
       this.device,
       new Float32Array(16),
@@ -247,17 +221,12 @@ export class Renderer {
     });
   }
 
-  render() {
-    // this.t += 0.05;
-
-    // if (this.t > Math.PI * 2) {
-    //   this.t -= Math.PI * 2;
-    // }
-
+  private render() {
     const cameraMatrix = this.camera.getCameraMatrix();
-    const model = mat4.rotate(mat4.identity(), [0, 0, 1], this.t);
 
     const modelViewProjection = mat4.create();
+    const model = mat4.rotate(mat4.identity(), [0, 0, 1], 0);
+    // const model = this.quadMesh.getModelMatrix();
     mat4.multiply(cameraMatrix, model, modelViewProjection);
 
     const asArrayBuffer = new Float32Array(modelViewProjection);
