@@ -1,55 +1,7 @@
+import { type Drawable } from "./drawables/Drawable";
+import { Rect } from "./drawables/Rect";
 import { Camera } from "./entities/Camera";
-import { QuadGeometry } from "./QuadGeometry";
-import { QuadMesh } from "./QuadMesh";
-import shader from "./shader.wgsl";
-import { TriangleMesh } from "./TriangleMesh";
-import { mat4, type Vec2 } from "wgpu-matrix";
-
-class BufferUtil {
-  public static createVertexBuffer(
-    device: GPUDevice,
-    data: Float32Array,
-  ): GPUBuffer {
-    const buffer = device.createBuffer({
-      size: data.byteLength,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true,
-    });
-
-    new Float32Array(buffer.getMappedRange()).set(data);
-    buffer.unmap();
-
-    return buffer;
-  }
-
-  public static createIndexBuffer(
-    device: GPUDevice,
-    data: Uint16Array,
-  ): GPUBuffer {
-    const buffer = device.createBuffer({
-      size: data.byteLength,
-      usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true,
-    });
-
-    new Uint16Array(buffer.getMappedRange()).set(data);
-    buffer.unmap();
-
-    return buffer;
-  }
-
-  public static createUniformBuffer(
-    device: GPUDevice,
-    data: Float32Array,
-  ): GPUBuffer {
-    const buffer = device.createBuffer({
-      size: data.byteLength,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    });
-
-    return buffer;
-  }
-}
+import { vec2, type Vec2 } from "wgpu-matrix";
 
 export type MouseEventOptions = {
   button: "left" | "right" | "middle";
@@ -61,10 +13,6 @@ export type MouseMoveOptions = {
   movement: Vec2;
 };
 
-interface Drawable {
-  draw(): void;
-}
-
 export class Engine {
   private canvas: HTMLCanvasElement;
 
@@ -73,15 +21,8 @@ export class Engine {
   private context!: GPUCanvasContext;
   private format!: GPUTextureFormat;
 
-  private uniformBuffer!: GPUBuffer;
-  private bindGroup!: GPUBindGroup;
-  private pipeline!: GPURenderPipeline;
-
-  private triangleMesh!: TriangleMesh;
-  private quadGeometry!: QuadGeometry;
-  private quadMesh!: QuadMesh;
-
   private camera: Camera;
+  public objects: Array<Drawable> = [];
 
   isMouseDown = false;
 
@@ -133,8 +74,6 @@ export class Engine {
   public async initialize() {
     await this.setupDevice();
     this.createAssets();
-    await this.makePipeline();
-
     this.render();
   }
 
@@ -156,98 +95,15 @@ export class Engine {
   }
 
   private createAssets() {
-    this.triangleMesh = new TriangleMesh(this.device);
-    this.quadGeometry = new QuadGeometry();
-    this.quadMesh = new QuadMesh(this.device);
-  }
+    const defaultRect = new Rect(this.device, this.format, this.camera);
+    const defaultRect2 = new Rect(this.device, this.format, this.camera);
 
-  private async makePipeline() {
-    this.uniformBuffer = BufferUtil.createUniformBuffer(
-      this.device,
-      new Float32Array(16),
-    );
+    defaultRect2.move(vec2.create(100, 100));
 
-    const bindGroupLayout = this.device.createBindGroupLayout({
-      entries: [
-        {
-          binding: 0,
-          visibility: GPUShaderStage.VERTEX,
-          buffer: {
-            type: "uniform",
-          },
-        },
-      ],
-    });
-
-    this.bindGroup = this.device.createBindGroup({
-      layout: bindGroupLayout,
-      entries: [
-        {
-          binding: 0,
-          resource: {
-            buffer: this.uniformBuffer,
-          },
-        },
-      ],
-    });
-
-    const pipelineLayout = this.device.createPipelineLayout({
-      bindGroupLayouts: [bindGroupLayout],
-    });
-
-    this.pipeline = this.device.createRenderPipeline({
-      layout: pipelineLayout,
-      vertex: {
-        module: this.device.createShaderModule({
-          code: shader,
-        }),
-        entryPoint: "vs_main",
-        buffers: [this.quadMesh.bufferLayout],
-      },
-      fragment: {
-        module: this.device.createShaderModule({
-          code: shader,
-        }),
-        entryPoint: "fs_main",
-        targets: [
-          {
-            format: this.format,
-          },
-        ],
-      },
-      primitive: {
-        topology: "triangle-list",
-      },
-    });
+    this.objects.push(defaultRect, defaultRect2);
   }
 
   private render() {
-    const cameraMatrix = this.camera.getCameraMatrix();
-
-    const modelViewProjection = mat4.create();
-    const model = this.quadMesh.getModelMatrix();
-    mat4.multiply(cameraMatrix, model, modelViewProjection);
-
-    const asArrayBuffer = new Float32Array(modelViewProjection);
-
-    this.device.queue.writeBuffer(
-      this.uniformBuffer,
-      0,
-      asArrayBuffer.buffer,
-      asArrayBuffer.byteOffset,
-      asArrayBuffer.byteLength,
-    );
-
-    const verticesBuffer = BufferUtil.createVertexBuffer(
-      this.device,
-      this.quadMesh.vertices,
-    );
-
-    const indicesBuffer = BufferUtil.createIndexBuffer(
-      this.device,
-      this.quadMesh.indices,
-    );
-
     const commandEncoder = this.device.createCommandEncoder();
     const textureView = this.context.getCurrentTexture().createView();
 
@@ -262,11 +118,7 @@ export class Engine {
       ],
     });
 
-    passEncoder.setPipeline(this.pipeline);
-    passEncoder.setIndexBuffer(indicesBuffer, "uint16");
-    passEncoder.setVertexBuffer(0, verticesBuffer);
-    passEncoder.setBindGroup(0, this.bindGroup);
-    passEncoder.drawIndexed(6);
+    this.objects.forEach((object) => object.draw(passEncoder));
     passEncoder.end();
 
     this.device.queue.submit([commandEncoder.finish()]);
