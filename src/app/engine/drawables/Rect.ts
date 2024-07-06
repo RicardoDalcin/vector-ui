@@ -3,9 +3,12 @@ import { type Drawable } from "./Drawable";
 import { BufferUtils } from "../BufferUtils";
 import { BasicMaterial } from "../materials/BasicMaterial/BasicMaterial";
 import { type Camera } from "../entities/Camera";
+import { v4 as uuidv4 } from "uuid";
 
 export class Rect implements Drawable {
   readonly DEFAULT_SIZE = 100;
+
+  id: string;
 
   device: GPUDevice;
 
@@ -24,6 +27,8 @@ export class Rect implements Drawable {
   rotation: number;
 
   constructor(device: GPUDevice, format: GPUTextureFormat, camera: Camera) {
+    this.id = uuidv4();
+
     this.position = vec2.create(0, 0);
 
     this.width = this.DEFAULT_SIZE;
@@ -56,12 +61,10 @@ export class Rect implements Drawable {
   private getModelMatrix() {
     const rotation = mat4.rotationZ(this.rotation);
 
-    const translation = mat4.translation([
-      this.position[0] ?? 0,
-      this.position[1] ?? 0,
-      0,
-    ]);
+    const x = this.position[0] ?? 0;
+    const y = this.position[1] ?? 0;
 
+    const translation = mat4.translation([x, y, 0]);
     const scaling = mat4.scaling([this.width, this.height, 1]);
 
     const model = mat4.multiply(translation, scaling);
@@ -79,6 +82,19 @@ export class Rect implements Drawable {
 
   public move(delta: Vec2) {
     this.position = vec2.add(this.position, delta);
+  }
+
+  public isPointColliding(point: Float32Array) {
+    const x = point[0] ?? 0;
+    const y = point[1] ?? 0;
+
+    const objX = this.position[0] ?? 0;
+    const objY = this.position[1] ?? 0;
+
+    const isInsideX = x >= objX && x <= objX + this.width;
+    const isInsideY = y >= objY && y <= objY + this.height;
+
+    return isInsideX && isInsideY;
   }
 
   draw(passEncoder: GPURenderPassEncoder) {

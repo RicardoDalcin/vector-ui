@@ -25,6 +25,7 @@ export class Engine {
   public objects: Array<Drawable> = [];
 
   isMouseDown = false;
+  selectedObject: Drawable | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -56,19 +57,34 @@ export class Engine {
   public onMouseDown(options: MouseEventOptions) {
     if (options.button === "left") {
       this.isMouseDown = true;
+
+      const absolutePosition = vec2.sub(options.position, this.camera.position);
+      const collision = this.objects.find((object) =>
+        object.isPointColliding(absolutePosition),
+      );
+
+      this.selectedObject = collision ?? null;
     }
   }
 
   public onMouseUp(options: MouseEventOptions) {
     if (options.button === "left") {
       this.isMouseDown = false;
+      this.selectedObject = null;
     }
   }
 
   public onMouseMove(options: MouseMoveOptions) {
-    if (this.isMouseDown) {
-      this.camera.pan(options.movement);
+    if (!this.isMouseDown) {
+      return;
     }
+
+    if (this.selectedObject) {
+      this.selectedObject.move(options.movement);
+      return;
+    }
+
+    this.camera.pan(options.movement);
   }
 
   public async initialize() {
@@ -98,7 +114,7 @@ export class Engine {
     const defaultRect = new Rect(this.device, this.format, this.camera);
     const defaultRect2 = new Rect(this.device, this.format, this.camera);
 
-    defaultRect2.move(vec2.create(100, 100));
+    defaultRect2.move(vec2.create(100, 0));
 
     this.objects.push(defaultRect, defaultRect2);
   }

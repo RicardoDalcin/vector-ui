@@ -36,8 +36,8 @@ export class Camera {
   getViewMatrix() {
     const viewMatrix = mat4.lookAt([0, 0, 1], [0, 0, 0], [0, 1, 0]);
     const translationMatrix = mat4.translation([
-      this.position[0] ?? 0,
-      this.position[1] ?? 0,
+      (this.position[0] ?? 0) * this.devicePixelRatio,
+      (this.position[1] ?? 0) * this.devicePixelRatio,
       0,
     ]);
     const scalingMatrix = mat4.scaling([

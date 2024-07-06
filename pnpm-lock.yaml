@@ -16,13 +16,13 @@ dependencies:
     version: 5.49.2(react@18.3.1)
   '@trpc/client':
     specifier: next
-    version: 11.0.0-rc.351(@trpc/server@11.0.0-rc.351)
+    version: 11.0.0-rc.449(@trpc/server@11.0.0-rc.449)
   '@trpc/react-query':
     specifier: next
-    version: 11.0.0-rc.351(@tanstack/react-query@5.49.2)(@trpc/client@11.0.0-rc.351)(@trpc/server@11.0.0-rc.351)(react-dom@18.3.1)(react@18.3.1)
+    version: 11.0.0-rc.449(@tanstack/react-query@5.49.2)(@trpc/client@11.0.0-rc.449)(@trpc/server@11.0.0-rc.449)(react-dom@18.3.1)(react@18.3.1)
   '@trpc/server':
     specifier: next
-    version: 11.0.0-rc.351
+    version: 11.0.0-rc.449
   classnames:
     specifier: ^2.5.1
     version: 2.5.1
@@ -50,6 +50,9 @@ dependencies:
   ts-shader-loader:
     specifier: ^2.0.2
     version: 2.0.2
+  uuid:
+    specifier: ^10.0.0
+    version: 10.0.0
   wgpu-matrix:
     specifier: ^3.0.1
     version: 3.0.1
@@ -70,6 +73,9 @@ devDependencies:
   '@types/react-dom':
     specifier: ^18.2.19
     version: 18.3.0
+  '@types/uuid':
+    specifier: ^10.0.0
+    version: 10.0.0
   '@typescript-eslint/eslint-plugin':
     specifier: ^7.1.1
     version: 7.14.1(@typescript-eslint/parser@7.14.1)(eslint@8.57.0)(typescript@5.5.2)
@@ -912,32 +918,32 @@ packages:
       react: 18.3.1
     dev: false
 
-  /@trpc/client@11.0.0-rc.351(@trpc/server@11.0.0-rc.351):
-    resolution: {integrity: sha512-48LKVO6pSk6/NSKmwZ1ixzQm/S3DD8iAI5j+L9Pqou/IPbS52qJepaCWd1bTWO+iDgXa9MxcsD0Gr8/IL5TznQ==}
+  /@trpc/client@11.0.0-rc.449(@trpc/server@11.0.0-rc.449):
+    resolution: {integrity: sha512-F/IRYnUJgp3xHsbaWUbOA50IOI3jUkNhBHM3dPpb8pt5IdkwqMzG+u4X45igMvxd387sL14gRk5xU1oz9cH8Lw==}
     peerDependencies:
-      '@trpc/server': 11.0.0-rc.351+a9b03d7f3
+      '@trpc/server': 11.0.0-rc.449+42acce6ac
     dependencies:
-      '@trpc/server': 11.0.0-rc.351
+      '@trpc/server': 11.0.0-rc.449
     dev: false
 
-  /@trpc/react-query@11.0.0-rc.351(@tanstack/react-query@5.49.2)(@trpc/client@11.0.0-rc.351)(@trpc/server@11.0.0-rc.351)(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-kEhXm/B1m2yIJ3ZiI2MdTHCzveoDBH03HdjD07pSoKuiXfDo221sX4Az9YaZ1wSwCFIt6L03Z5OopOhlxhK3ww==}
+  /@trpc/react-query@11.0.0-rc.449(@tanstack/react-query@5.49.2)(@trpc/client@11.0.0-rc.449)(@trpc/server@11.0.0-rc.449)(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-CokXudkoIgIYWTjVnDSNuErpo1xpRAcTP0FcINe0IUE9iNt+d2BfnOUKF2YgYPNekta559334/v1PLim7GYGsQ==}
     peerDependencies:
-      '@tanstack/react-query': ^5.25.0
-      '@trpc/client': 11.0.0-rc.351+a9b03d7f3
-      '@trpc/server': 11.0.0-rc.351+a9b03d7f3
+      '@tanstack/react-query': ^5.49.2
+      '@trpc/client': 11.0.0-rc.449+42acce6ac
+      '@trpc/server': 11.0.0-rc.449+42acce6ac
       react: '>=18.2.0'
       react-dom: '>=18.2.0'
     dependencies:
       '@tanstack/react-query': 5.49.2(react@18.3.1)
-      '@trpc/client': 11.0.0-rc.351(@trpc/server@11.0.0-rc.351)
-      '@trpc/server': 11.0.0-rc.351
+      '@trpc/client': 11.0.0-rc.449(@trpc/server@11.0.0-rc.449)
+      '@trpc/server': 11.0.0-rc.449
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     dev: false
 
-  /@trpc/server@11.0.0-rc.351:
-    resolution: {integrity: sha512-Y1Iw9iiF9LCJ2ldS/af+2RXzIbgWvQ4DHVVgHYOGB+uINpAugsUmogoEkZ6rYOgusNz6qkRzY8JKOSR7FQ1aUg==}
+  /@trpc/server@11.0.0-rc.449:
+    resolution: {integrity: sha512-xM/vQ042wA0FPAFhY18KcNJgiMMjdPk4mG3GXdHx4X9tpBuSlENUMZErEsuBrvbSpqbkIpalz5yY99/cPnHbCw==}
     dev: false
 
   /@types/eslint@8.56.10:
@@ -978,6 +984,10 @@ packages:
     dependencies:
       '@types/prop-types': 15.7.12
       csstype: 3.1.3
+
+  /@types/uuid@10.0.0:
+    resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
+    dev: true
 
   /@types/ws@8.5.10:
     resolution: {integrity: sha512-vmQSUcfalpIq0R9q7uTo2lXs6eGIpt9wtnLdMv9LVpIjCA/+ufZRozlVoVelIYixx1ugCBKDhn89vnsEGOCx9A==}
@@ -4190,6 +4200,11 @@ packages:
   /util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
     dev: true
+
+  /uuid@10.0.0:
+    resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
+    hasBin: true
+    dev: false
 
   /web-streams-polyfill@3.3.3:
     resolution: {integrity: sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==}

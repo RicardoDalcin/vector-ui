@@ -23,7 +23,8 @@ const EventUtils = {
   getMouseEvent(event: MouseEvent): MouseEventOptions {
     const BUTTON_TYPES = ["left", "middle", "right"] as const;
     const button = BUTTON_TYPES[event.button] ?? "left";
-    const position = vec2.create(event.clientX, event.clientY);
+
+    const position = vec2.create(event.offsetX, event.offsetY);
 
     return {
       button,
@@ -120,7 +121,15 @@ export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engine = useRef<Engine | null>(null);
 
+  const initialized = useRef(false);
+
   useEffect(() => {
+    if (initialized.current) {
+      return;
+    }
+
+    initialized.current = true;
+
     const canvas = canvasRef.current;
     const container = containerRef.current;
 
