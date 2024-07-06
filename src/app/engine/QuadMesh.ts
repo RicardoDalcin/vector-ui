@@ -1,4 +1,4 @@
-import { vec2, type Vec2 } from "wgpu-matrix";
+import { mat4, vec2, type Vec2 } from "wgpu-matrix";
 
 export class QuadMesh {
   buffer: GPUBuffer;
@@ -9,47 +9,22 @@ export class QuadMesh {
   position: Vec2;
   width: number;
   height: number;
+  rotation: number;
 
   constructor(device: GPUDevice) {
-    this.position = vec2.create(100, 100);
+    this.position = vec2.create(0, 0);
 
     this.width = 100;
     this.height = 100;
 
-    const topLeft = [
-      (this.position[0] ?? 0) + this.width,
-      (this.position[1] ?? 0) + this.height,
-      1.0,
-      1.0,
-      1.0,
-    ];
-    const topRight = [
-      this.position[0] ?? 0,
-      (this.position[1] ?? 0) + this.height,
-      1.0,
-      1.0,
-      1.0,
-    ];
-    const bottomLeft = [
-      this.position[0] ?? 0,
-      this.position[1] ?? 0,
-      1.0,
-      1.0,
-      1.0,
-    ];
-    const bottomRight = [
-      (this.position[0] ?? 0) + this.width,
-      this.position[1] ?? 0,
-      1.0,
-      1.0,
-      1.0,
-    ];
+    this.rotation = 0;
 
+    // prettier-ignore
     this.vertices = new Float32Array([
-      ...bottomLeft,
-      ...bottomRight,
-      ...topLeft,
-      ...topRight,
+      0.0, 1.0, 1.0, 0.0, 1.0, // bottom left
+      1.0, 1.0, 0.0, 0.0, 1.0, // bottom right
+      1.0, 0.0, 1.0, 0.0, 0.0, // top right
+      0.0, 0.0, 0.0, 1.0, 0.0, // top left
     ]);
 
     this.indices = new Uint16Array([0, 1, 2, 2, 3, 0]);
@@ -84,5 +59,20 @@ export class QuadMesh {
       ],
       stepMode: "vertex",
     };
+  }
+
+  getModelMatrix() {
+    const rotation = mat4.rotationZ(this.rotation);
+
+    const translation = mat4.translation([
+      this.position[0] ?? 0,
+      this.position[1] ?? 0,
+      0,
+    ]);
+
+    const scaling = mat4.scaling([this.width, this.height, 1]);
+
+    const model = mat4.multiply(translation, scaling);
+    return mat4.multiply(model, rotation);
   }
 }

@@ -225,8 +225,7 @@ export class Engine {
     const cameraMatrix = this.camera.getCameraMatrix();
 
     const modelViewProjection = mat4.create();
-    const model = mat4.rotate(mat4.identity(), [0, 0, 1], 0);
-    // const model = this.quadMesh.getModelMatrix();
+    const model = this.quadMesh.getModelMatrix();
     mat4.multiply(cameraMatrix, model, modelViewProjection);
 
     const asArrayBuffer = new Float32Array(modelViewProjection);
