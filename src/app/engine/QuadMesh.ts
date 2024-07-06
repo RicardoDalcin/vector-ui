@@ -11,10 +11,10 @@ export class QuadMesh {
     const w = 250;
     const h = 250;
 
-    const topLeft = [x + w, y + h, 0.0, 0.0, 1.0, 1.0, 1.0];
-    const topRight = [x, y + h, 1.0, 0.0, 1.0, 1.0, 1.0];
-    const bottomLeft = [x, y, 0.0, 1.0, 1.0, 1.0, 1.0];
-    const bottomRight = [x + w, y, 1.0, 1.0, 1.0, 1.0, 1.0];
+    const topLeft = [x + w, y + h, 1.0, 1.0, 1.0];
+    const topRight = [x, y + h, 1.0, 1.0, 1.0];
+    const bottomLeft = [x, y, 1.0, 1.0, 1.0];
+    const bottomRight = [x + w, y, 1.0, 1.0, 1.0];
 
     this.vertices = new Float32Array([
       ...bottomLeft,
@@ -40,7 +40,7 @@ export class QuadMesh {
     this.buffer.unmap();
 
     this.bufferLayout = {
-      arrayStride: 7 * Float32Array.BYTES_PER_ELEMENT, // 2 floats * 4 bytes per float
+      arrayStride: 5 * Float32Array.BYTES_PER_ELEMENT, // 2 floats * 4 bytes per float
       attributes: [
         {
           shaderLocation: 0,
@@ -50,11 +50,6 @@ export class QuadMesh {
         {
           shaderLocation: 1,
           offset: 2 * Float32Array.BYTES_PER_ELEMENT,
-          format: "float32x2", // 2 floats
-        },
-        {
-          shaderLocation: 2,
-          offset: 4 * Float32Array.BYTES_PER_ELEMENT,
           format: "float32x3", // 3 floats
         },
       ],
