@@ -1,20 +1,49 @@
+import { vec2, type Vec2 } from "wgpu-matrix";
+
 export class QuadMesh {
   buffer: GPUBuffer;
   bufferLayout: GPUVertexBufferLayout;
   vertices: Float32Array;
   indices: Uint16Array;
 
+  position: Vec2;
+  width: number;
+  height: number;
+
   constructor(device: GPUDevice) {
-    const x = 100;
-    const y = 100;
+    this.position = vec2.create(100, 100);
 
-    const w = 250;
-    const h = 250;
+    this.width = 100;
+    this.height = 100;
 
-    const topLeft = [x + w, y + h, 1.0, 1.0, 1.0];
-    const topRight = [x, y + h, 1.0, 1.0, 1.0];
-    const bottomLeft = [x, y, 1.0, 1.0, 1.0];
-    const bottomRight = [x + w, y, 1.0, 1.0, 1.0];
+    const topLeft = [
+      (this.position[0] ?? 0) + this.width,
+      (this.position[1] ?? 0) + this.height,
+      1.0,
+      1.0,
+      1.0,
+    ];
+    const topRight = [
+      this.position[0] ?? 0,
+      (this.position[1] ?? 0) + this.height,
+      1.0,
+      1.0,
+      1.0,
+    ];
+    const bottomLeft = [
+      this.position[0] ?? 0,
+      this.position[1] ?? 0,
+      1.0,
+      1.0,
+      1.0,
+    ];
+    const bottomRight = [
+      (this.position[0] ?? 0) + this.width,
+      this.position[1] ?? 0,
+      1.0,
+      1.0,
+      1.0,
+    ];
 
     this.vertices = new Float32Array([
       ...bottomLeft,
