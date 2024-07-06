@@ -84,6 +84,18 @@ export class Rect implements Drawable {
     this.position = vec2.add(this.position, delta);
   }
 
+  public setPosition(position: Vec2) {
+    this.position = position;
+  }
+
+  public setHeight(height: number) {
+    this.height = height;
+  }
+
+  public setWidth(width: number) {
+    this.width = width;
+  }
+
   public isPointColliding(point: Float32Array) {
     const x = point[0] ?? 0;
     const y = point[1] ?? 0;

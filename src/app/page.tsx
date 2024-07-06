@@ -1,19 +1,16 @@
 "use client";
 
 import classNames from "classnames";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   Engine,
   type MouseMoveOptions,
   type MouseEventOptions,
+  EditorMode,
+  EngineCallbacks,
 } from "./engine/Engine";
 import { vec2 } from "wgpu-matrix";
-
-enum EditorMode {
-  Move = "move",
-  Rectangle = "rectangle",
-}
 
 const EventUtils = {
   isControlPressed: (event: KeyboardEvent | WheelEvent) => {
@@ -32,86 +29,30 @@ const EventUtils = {
     };
   },
   getMouseMoveEvent(event: MouseEvent): MouseMoveOptions {
-    const position = vec2.create(event.clientX, event.clientY);
+    const windowPosition = vec2.create(event.clientX, event.clientY);
+    const position = vec2.create(event.offsetX, event.offsetY);
     const movement = vec2.create(event.movementX, event.movementY);
 
     return {
+      windowPosition,
       position,
       movement,
     };
   },
 };
 
-async function setupEngine(canvas: HTMLCanvasElement) {
+async function setupEngine(
+  canvas: HTMLCanvasElement,
+  callbacks: EngineCallbacks,
+) {
   if (!navigator.gpu) {
     throw "Your current browser does not support WebGPU!";
   }
 
-  const engine = new Engine(canvas);
+  const engine = new Engine(canvas, callbacks);
   await engine.initialize();
 
   return engine;
-}
-
-function bindEngineEvents(engine: Engine, container: HTMLElement) {
-  window.addEventListener("resize", () => engine.resize());
-
-  window.addEventListener("keydown", (event) => {
-    const isControlPressed = EventUtils.isControlPressed(event);
-
-    if ((event.key === "=" || event.key === "+") && isControlPressed) {
-      event.preventDefault();
-      engine.zoomIn();
-    }
-
-    if (event.key === "-" && isControlPressed) {
-      event.preventDefault();
-      engine.zoomOut();
-    }
-  });
-
-  window.addEventListener(
-    "wheel",
-    (event) => {
-      event.preventDefault();
-    },
-    { passive: false },
-  );
-
-  container.addEventListener(
-    "wheel",
-    (event) => {
-      const isControlPressed = EventUtils.isControlPressed(event);
-
-      if (isControlPressed) {
-        event.preventDefault();
-
-        if (event.deltaY < 0) {
-          engine.zoomIn();
-        }
-
-        if (event.deltaY > 0) {
-          engine.zoomOut();
-        }
-      }
-    },
-    { passive: false },
-  );
-
-  container.addEventListener("mousedown", (event) => {
-    event.preventDefault();
-    engine.onMouseDown(EventUtils.getMouseEvent(event));
-  });
-
-  window.addEventListener("mouseup", (event) => {
-    event.preventDefault();
-    engine.onMouseUp(EventUtils.getMouseEvent(event));
-  });
-
-  window.addEventListener("mousemove", (event) => {
-    event.preventDefault();
-    engine.onMouseMove(EventUtils.getMouseMoveEvent(event));
-  });
 }
 
 export default function Home() {
@@ -122,6 +63,102 @@ export default function Home() {
   const engine = useRef<Engine | null>(null);
 
   const initialized = useRef(false);
+
+  const changeEditorMode = useCallback((mode: EditorMode) => {
+    engine.current?.setEditorMode(mode);
+    setEditorMode(mode);
+  }, []);
+
+  const bindEngineEvents = useCallback(
+    (engine: Engine, container: HTMLElement) => {
+      window.addEventListener("resize", () => engine.resize());
+
+      window.addEventListener("keydown", (event) => {
+        const isControlPressed = EventUtils.isControlPressed(event);
+
+        if ((event.key === "=" || event.key === "+") && isControlPressed) {
+          event.preventDefault();
+          engine.zoomIn();
+        }
+
+        if (event.key === "-" && isControlPressed) {
+          event.preventDefault();
+          engine.zoomOut();
+        }
+
+        if (event.key === "v" && !isControlPressed) {
+          event.preventDefault();
+          changeEditorMode(EditorMode.Move);
+        }
+
+        if (event.key === "r" && !isControlPressed) {
+          event.preventDefault();
+          changeEditorMode(EditorMode.Rectangle);
+        }
+
+        if (event.key === "h" && !isControlPressed) {
+          event.preventDefault();
+          changeEditorMode(EditorMode.Hand);
+        }
+
+        if (event.key === " " && !isControlPressed) {
+          event.preventDefault();
+          engine.setDragging(true);
+        }
+      });
+
+      window.addEventListener("keyup", (event) => {
+        if (event.key === " ") {
+          event.preventDefault();
+          engine.setDragging(false);
+        }
+      });
+
+      window.addEventListener(
+        "wheel",
+        (event) => {
+          event.preventDefault();
+        },
+        { passive: false },
+      );
+
+      container.addEventListener(
+        "wheel",
+        (event) => {
+          const isControlPressed = EventUtils.isControlPressed(event);
+
+          if (isControlPressed) {
+            event.preventDefault();
+
+            if (event.deltaY < 0) {
+              engine.zoomIn();
+            }
+
+            if (event.deltaY > 0) {
+              engine.zoomOut();
+            }
+          }
+        },
+        { passive: false },
+      );
+
+      container.addEventListener("mousedown", (event) => {
+        event.preventDefault();
+        engine.onMouseDown(EventUtils.getMouseEvent(event));
+      });
+
+      window.addEventListener("mouseup", (event) => {
+        event.preventDefault();
+        engine.onMouseUp(EventUtils.getMouseEvent(event));
+      });
+
+      window.addEventListener("mousemove", (event) => {
+        event.preventDefault();
+        engine.onMouseMove(EventUtils.getMouseMoveEvent(event));
+      });
+    },
+    [changeEditorMode],
+  );
 
   useEffect(() => {
     if (initialized.current) {
@@ -138,18 +175,24 @@ export default function Home() {
     }
 
     const setup = async () => {
-      engine.current = await setupEngine(canvas);
+      engine.current = await setupEngine(canvas, {
+        onEditorModeChange: (mode) => {
+          setEditorMode(mode);
+        },
+      });
       bindEngineEvents(engine.current, container);
+      engine.current.setEditorMode(EditorMode.Move);
     };
 
     void setup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <main className="flex h-screen w-screen flex-col divide-y divide-neutral-700 overflow-hidden">
       <nav className="h-[56px] w-full bg-neutral-800">
         <button
-          onClick={() => setEditorMode(EditorMode.Move)}
+          onClick={() => changeEditorMode(EditorMode.Move)}
           className={classNames("h-[56px] w-[56px]", {
             "bg-blue-500": editorMode === EditorMode.Move,
           })}
@@ -158,12 +201,21 @@ export default function Home() {
         </button>
 
         <button
-          onClick={() => setEditorMode(EditorMode.Rectangle)}
+          onClick={() => changeEditorMode(EditorMode.Rectangle)}
           className={classNames("h-[56px] w-[56px]", {
             "bg-blue-500": editorMode === EditorMode.Rectangle,
           })}
         >
           R
+        </button>
+
+        <button
+          onClick={() => changeEditorMode(EditorMode.Hand)}
+          className={classNames("h-[56px] w-[56px]", {
+            "bg-blue-500": editorMode === EditorMode.Hand,
+          })}
+        >
+          H
         </button>
       </nav>
 

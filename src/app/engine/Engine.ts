@@ -9,12 +9,27 @@ export type MouseEventOptions = {
 };
 
 export type MouseMoveOptions = {
+  windowPosition: Vec2;
   position: Vec2;
   movement: Vec2;
 };
 
+export enum EditorMode {
+  Move = "move",
+  Hand = "hand",
+  Rectangle = "rectangle",
+}
+
+export type EngineCallbacks = Partial<{
+  onEditorModeChange: (mode: EditorMode) => void;
+}>;
+
 export class Engine {
+  private readonly MIN_DISTANCE_TO_CREATE_OBJECT = 10;
+  private readonly TARGET_EDITOR_MODES = [EditorMode.Move];
+
   private canvas: HTMLCanvasElement;
+  private callbacks: EngineCallbacks;
 
   private adapter!: GPUAdapter;
   private device!: GPUDevice;
@@ -25,9 +40,12 @@ export class Engine {
   public objects: Array<Drawable> = [];
 
   isMouseDown = false;
+  mouseDownPosition: Vec2 | null = null;
   selectedObject: Drawable | null = null;
+  editorMode: EditorMode = EditorMode.Move;
+  isDragging = false;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, callbacks: EngineCallbacks) {
     this.canvas = canvas;
     this.canvas.width = this.canvas.clientWidth * window.devicePixelRatio;
     this.canvas.height = this.canvas.clientHeight * window.devicePixelRatio;
@@ -37,6 +55,8 @@ export class Engine {
       canvas.height,
       window.devicePixelRatio,
     );
+
+    this.callbacks = callbacks;
   }
 
   public resize() {
@@ -54,37 +74,116 @@ export class Engine {
     this.camera.zoomOut();
   }
 
+  public setEditorMode(mode: EditorMode) {
+    this.editorMode = mode;
+    this.isMouseDown = false;
+
+    this.callbacks.onEditorModeChange?.(mode);
+  }
+
+  public setDragging(isDragging: boolean) {
+    this.isDragging = isDragging;
+  }
+
   public onMouseDown(options: MouseEventOptions) {
     if (options.button === "left") {
       this.isMouseDown = true;
+      this.mouseDownPosition = options.position;
 
+      if (this.editorMode === EditorMode.Move) {
+      }
       const absolutePosition = vec2.sub(options.position, this.camera.position);
-      const collision = this.objects.find((object) =>
-        object.isPointColliding(absolutePosition),
-      );
 
-      this.selectedObject = collision ?? null;
+      if (this.TARGET_EDITOR_MODES.includes(this.editorMode)) {
+        const collision = this.objects.find((object) =>
+          object.isPointColliding(absolutePosition),
+        );
+
+        this.selectedObject = collision ?? null;
+      } else {
+        this.selectedObject = null;
+      }
     }
   }
 
   public onMouseUp(options: MouseEventOptions) {
     if (options.button === "left") {
+      if (!this.isMouseDown) {
+        return;
+      }
+
+      if (this.editorMode === EditorMode.Rectangle && !this.isDragging) {
+        if (!this.selectedObject) {
+          const newRect = new Rect(this.device, this.format, this.camera);
+          const absolutePosition = vec2.sub(
+            options.position,
+            this.camera.position,
+          );
+
+          newRect.setPosition(
+            vec2.sub(
+              absolutePosition,
+              vec2.create(newRect.width / 2, newRect.height / 2),
+            ),
+          );
+          this.objects.push(newRect);
+        }
+
+        this.setEditorMode(EditorMode.Move);
+      }
+
       this.isMouseDown = false;
       this.selectedObject = null;
     }
   }
 
   public onMouseMove(options: MouseMoveOptions) {
-    if (!this.isMouseDown) {
+    if (!this.isMouseDown || !this.mouseDownPosition) {
       return;
     }
 
-    if (this.selectedObject) {
-      this.selectedObject.move(options.movement);
+    if (this.editorMode === EditorMode.Hand || this.isDragging) {
+      this.camera.pan(options.movement);
       return;
     }
 
-    this.camera.pan(options.movement);
+    if (this.editorMode === EditorMode.Move) {
+      this.selectedObject?.move(options.movement);
+      return;
+    }
+
+    if (this.editorMode === EditorMode.Rectangle) {
+      const hasTraveledMinDistance =
+        vec2.distance(this.mouseDownPosition, options.position) >=
+        this.MIN_DISTANCE_TO_CREATE_OBJECT;
+
+      if (!hasTraveledMinDistance && !this.selectedObject) {
+        return;
+      }
+
+      if (!this.selectedObject) {
+        const newRect = new Rect(this.device, this.format, this.camera);
+        const absolutePosition = vec2.sub(
+          this.mouseDownPosition,
+          this.camera.position,
+        );
+        newRect.setPosition(absolutePosition);
+        this.objects.push(newRect);
+        this.selectedObject = newRect;
+      }
+
+      const width = Math.abs(
+        (options.position[0] ?? 0) - (this.mouseDownPosition[0] ?? 0),
+      );
+      const height = Math.abs(
+        (options.position[1] ?? 0) - (this.mouseDownPosition[1] ?? 0),
+      );
+
+      this.selectedObject.setWidth(width || 1);
+      this.selectedObject.setHeight(height || 1);
+
+      return;
+    }
   }
 
   public async initialize() {
