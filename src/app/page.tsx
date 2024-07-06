@@ -57,6 +57,8 @@ async function setupEngine(
 
 export default function Home() {
   const [editorMode, setEditorMode] = useState<EditorMode>(EditorMode.Move);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isMouseDown, setIsMouseDown] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -104,6 +106,7 @@ export default function Home() {
         if (event.key === " " && !isControlPressed) {
           event.preventDefault();
           engine.setDragging(true);
+          setIsDragging(true);
         }
       });
 
@@ -111,6 +114,7 @@ export default function Home() {
         if (event.key === " ") {
           event.preventDefault();
           engine.setDragging(false);
+          setIsDragging(false);
         }
       });
 
@@ -145,11 +149,13 @@ export default function Home() {
       container.addEventListener("mousedown", (event) => {
         event.preventDefault();
         engine.onMouseDown(EventUtils.getMouseEvent(event));
+        setIsMouseDown(true);
       });
 
       window.addEventListener("mouseup", (event) => {
         event.preventDefault();
         engine.onMouseUp(EventUtils.getMouseEvent(event));
+        setIsMouseDown(false);
       });
 
       window.addEventListener("mousemove", (event) => {
@@ -189,7 +195,18 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="flex h-screen w-screen flex-col divide-y divide-neutral-700 overflow-hidden">
+    <main
+      className={classNames(
+        "flex h-screen w-screen flex-col divide-y divide-neutral-700 overflow-hidden",
+        {
+          "cursor-auto": !isDragging && editorMode !== EditorMode.Hand,
+          "cursor-grab":
+            (isDragging || editorMode === EditorMode.Hand) && !isMouseDown,
+          "cursor-grabbing":
+            (isDragging || editorMode === EditorMode.Hand) && isMouseDown,
+        },
+      )}
+    >
       <nav className="h-[56px] w-full bg-neutral-800">
         <button
           onClick={() => changeEditorMode(EditorMode.Move)}
