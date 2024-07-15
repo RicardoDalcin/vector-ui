@@ -172,13 +172,19 @@ export class Engine {
         this.selectedObject = newRect;
       }
 
-      const width = Math.abs(
-        (options.position[0] ?? 0) - (this.mouseDownPosition[0] ?? 0),
-      );
-      const height = Math.abs(
-        (options.position[1] ?? 0) - (this.mouseDownPosition[1] ?? 0),
-      );
+      const currentX = options.position[0] ?? 0;
+      const currentY = options.position[1] ?? 0;
 
+      const downX = this.mouseDownPosition[0] ?? 0;
+      const downY = this.mouseDownPosition[1] ?? 0;
+
+      const width = Math.abs(currentX - downX);
+      const height = Math.abs(currentY - downY);
+
+      const x = Math.min(downX, currentX);
+      const y = Math.min(downY, currentY);
+
+      this.selectedObject.setPosition(vec2.create(x, y));
       this.selectedObject.setWidth(width || 1);
       this.selectedObject.setHeight(height || 1);
 
