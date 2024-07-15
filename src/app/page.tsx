@@ -8,7 +8,7 @@ import {
   type MouseMoveOptions,
   type MouseEventOptions,
   EditorMode,
-  EngineCallbacks,
+  type EngineCallbacks,
 } from "./engine/Engine";
 import { vec2 } from "wgpu-matrix";
 
@@ -17,24 +17,33 @@ const EventUtils = {
     const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
     return isMac ? event.metaKey : event.ctrlKey;
   },
-  getMouseEvent(event: MouseEvent): MouseEventOptions {
+  getMouseEvent(
+    event: MouseEvent,
+    canvas: HTMLCanvasElement,
+  ): MouseEventOptions {
     const BUTTON_TYPES = ["left", "middle", "right"] as const;
     const button = BUTTON_TYPES[event.button] ?? "left";
 
-    const position = vec2.create(event.offsetX, event.offsetY);
+    const x = event.clientX - canvas.offsetLeft;
+    const y = event.clientY - canvas.offsetTop;
+    const position = vec2.create(x, y);
 
     return {
       button,
       position,
     };
   },
-  getMouseMoveEvent(event: MouseEvent): MouseMoveOptions {
-    const windowPosition = vec2.create(event.clientX, event.clientY);
-    const position = vec2.create(event.offsetX, event.offsetY);
+  getMouseMoveEvent(
+    event: MouseEvent,
+    canvas: HTMLCanvasElement,
+  ): MouseMoveOptions {
+    const x = event.clientX - canvas.offsetLeft;
+    const y = event.clientY - canvas.offsetTop;
+
+    const position = vec2.create(x, y);
     const movement = vec2.create(event.movementX, event.movementY);
 
     return {
-      windowPosition,
       position,
       movement,
     };
@@ -65,6 +74,8 @@ export default function Home() {
   const engine = useRef<Engine | null>(null);
 
   const initialized = useRef(false);
+
+  const isMacOs = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
 
   const changeEditorMode = useCallback((mode: EditorMode) => {
     engine.current?.setEditorMode(mode);
@@ -147,20 +158,32 @@ export default function Home() {
       );
 
       container.addEventListener("mousedown", (event) => {
+        const canvas = canvasRef.current;
+        if (!canvas) {
+          return;
+        }
         event.preventDefault();
-        engine.onMouseDown(EventUtils.getMouseEvent(event));
+        engine.onMouseDown(EventUtils.getMouseEvent(event, canvas));
         setIsMouseDown(true);
       });
 
       window.addEventListener("mouseup", (event) => {
+        const canvas = canvasRef.current;
+        if (!canvas) {
+          return;
+        }
         event.preventDefault();
-        engine.onMouseUp(EventUtils.getMouseEvent(event));
+        engine.onMouseUp(EventUtils.getMouseEvent(event, canvas));
         setIsMouseDown(false);
       });
 
       window.addEventListener("mousemove", (event) => {
+        const canvas = canvasRef.current;
+        if (!canvas) {
+          return;
+        }
         event.preventDefault();
-        engine.onMouseMove(EventUtils.getMouseMoveEvent(event));
+        engine.onMouseMove(EventUtils.getMouseMoveEvent(event, canvas));
       });
     },
     [changeEditorMode],
@@ -201,9 +224,13 @@ export default function Home() {
         {
           "cursor-auto": !isDragging && editorMode !== EditorMode.Hand,
           "cursor-grab":
-            (isDragging || editorMode === EditorMode.Hand) && !isMouseDown,
+            (isDragging || editorMode === EditorMode.Hand) &&
+            !isMouseDown &&
+            isMacOs,
           "cursor-grabbing":
-            (isDragging || editorMode === EditorMode.Hand) && isMouseDown,
+            (isDragging || editorMode === EditorMode.Hand) &&
+            isMouseDown &&
+            isMacOs,
         },
       )}
     >

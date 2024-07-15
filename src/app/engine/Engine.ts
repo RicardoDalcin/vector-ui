@@ -1,7 +1,7 @@
 import { type Drawable } from "./drawables/Drawable";
 import { Rect } from "./drawables/Rect";
 import { Camera } from "./entities/Camera";
-import { vec2, type Vec2 } from "wgpu-matrix";
+import { mat4, vec2, type Vec2 } from "wgpu-matrix";
 
 export type MouseEventOptions = {
   button: "left" | "right" | "middle";
@@ -9,7 +9,6 @@ export type MouseEventOptions = {
 };
 
 export type MouseMoveOptions = {
-  windowPosition: Vec2;
   position: Vec2;
   movement: Vec2;
 };
@@ -85,18 +84,21 @@ export class Engine {
     this.isDragging = isDragging;
   }
 
+  private getWorldPositionPoint(position: Vec2) {
+    const matrix = mat4.inverse(this.camera.getViewMatrix());
+    return vec2.transformMat4(position, matrix);
+  }
+
   public onMouseDown(options: MouseEventOptions) {
     if (options.button === "left") {
-      this.isMouseDown = true;
-      this.mouseDownPosition = options.position;
+      const position = this.getWorldPositionPoint(options.position);
 
-      if (this.editorMode === EditorMode.Move) {
-      }
-      const absolutePosition = vec2.sub(options.position, this.camera.position);
+      this.isMouseDown = true;
+      this.mouseDownPosition = position;
 
       if (this.TARGET_EDITOR_MODES.includes(this.editorMode)) {
         const collision = this.objects.find((object) =>
-          object.isPointColliding(absolutePosition),
+          object.isPointColliding(position),
         );
 
         this.selectedObject = collision ?? null;
@@ -108,6 +110,8 @@ export class Engine {
 
   public onMouseUp(options: MouseEventOptions) {
     if (options.button === "left") {
+      const position = this.getWorldPositionPoint(options.position);
+
       if (!this.isMouseDown) {
         return;
       }
@@ -115,14 +119,10 @@ export class Engine {
       if (this.editorMode === EditorMode.Rectangle && !this.isDragging) {
         if (!this.selectedObject) {
           const newRect = new Rect(this.device, this.format, this.camera);
-          const absolutePosition = vec2.sub(
-            options.position,
-            this.camera.position,
-          );
 
           newRect.setPosition(
             vec2.sub(
-              absolutePosition,
+              position,
               vec2.create(newRect.width / 2, newRect.height / 2),
             ),
           );
@@ -138,6 +138,8 @@ export class Engine {
   }
 
   public onMouseMove(options: MouseMoveOptions) {
+    const position = this.getWorldPositionPoint(options.position);
+
     if (!this.isMouseDown || !this.mouseDownPosition) {
       return;
     }
@@ -154,7 +156,7 @@ export class Engine {
 
     if (this.editorMode === EditorMode.Rectangle) {
       const hasTraveledMinDistance =
-        vec2.distance(this.mouseDownPosition, options.position) >=
+        vec2.distance(this.mouseDownPosition, position) >=
         this.MIN_DISTANCE_TO_CREATE_OBJECT;
 
       if (!hasTraveledMinDistance && !this.selectedObject) {
@@ -163,17 +165,13 @@ export class Engine {
 
       if (!this.selectedObject) {
         const newRect = new Rect(this.device, this.format, this.camera);
-        const absolutePosition = vec2.sub(
-          this.mouseDownPosition,
-          this.camera.position,
-        );
-        newRect.setPosition(absolutePosition);
+        newRect.setPosition(this.mouseDownPosition);
         this.objects.push(newRect);
         this.selectedObject = newRect;
       }
 
-      const currentX = options.position[0] ?? 0;
-      const currentY = options.position[1] ?? 0;
+      const currentX = position[0] ?? 0;
+      const currentY = position[1] ?? 0;
 
       const downX = this.mouseDownPosition[0] ?? 0;
       const downY = this.mouseDownPosition[1] ?? 0;
