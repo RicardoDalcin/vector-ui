@@ -9,10 +9,14 @@ struct Fragment {
 }
 
 @vertex
-fn vs_main(@location(0) vertexPosition : vec2<f32>, @location(1) vertexColor : vec3<f32>) -> Fragment {
+fn vs_main(
+  @location(0) vertexPosition : vec2<f32>,
+  // @location(1) vertexColor : vec3<f32>
+) -> Fragment {
   var output : Fragment;
   output.position = transformData.modelViewProjection * vec4<f32>(vertexPosition, 1.0, 1.0);
-  output.color = vec4<f32>(vertexColor, 1.0);
+  // output.color = vec4<f32>(vertexColor, 1.0);
+  output.color = vec4<f32>(1.0, 1.0, 1.0, 1.0);
 
   return output;
 }

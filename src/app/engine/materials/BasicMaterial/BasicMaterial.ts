@@ -22,18 +22,18 @@ export class BasicMaterial {
     });
 
     const bufferLayout: GPUVertexBufferLayout = {
-      arrayStride: 5 * Float32Array.BYTES_PER_ELEMENT,
+      arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
       attributes: [
         {
           shaderLocation: 0,
           offset: 0,
           format: "float32x2",
         },
-        {
-          shaderLocation: 1,
-          offset: 2 * Float32Array.BYTES_PER_ELEMENT,
-          format: "float32x3",
-        },
+        // {
+        //   shaderLocation: 1,
+        //   offset: 2 * Float32Array.BYTES_PER_ELEMENT,
+        //   format: "float32x3",
+        // },
       ],
       stepMode: "vertex",
     };

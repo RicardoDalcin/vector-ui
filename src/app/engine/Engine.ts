@@ -1,4 +1,5 @@
 import { type Drawable } from "./drawables/Drawable";
+import { getRect, getTriangle, Polygon } from "./drawables/Polygon";
 import { Rect } from "./drawables/Rect";
 import { Camera } from "./entities/Camera";
 import { mat4, vec2, type Vec2 } from "wgpu-matrix";
@@ -17,6 +18,17 @@ export enum EditorMode {
   Move = "move",
   Hand = "hand",
   Rectangle = "rectangle",
+}
+
+export enum ScaleDirection {
+  Right = "right",
+  Left = "left",
+  Top = "top",
+  Bottom = "bottom",
+  TopRight = "top-right",
+  TopLeft = "top-left",
+  BottomRight = "bottom-right",
+  BottomLeft = "bottom-left",
 }
 
 export type EngineCallbacks = Partial<{
@@ -229,12 +241,16 @@ export class Engine {
   }
 
   private createAssets() {
-    const defaultRect = new Rect(this.device, this.format, this.camera);
+    // const defaultRect = new Rect(this.device, this.format, this.camera);
     const defaultRect2 = new Rect(this.device, this.format, this.camera);
 
-    defaultRect2.move(vec2.create(100, 0));
+    const defaultPolygon = getRect(this.device, this.format, this.camera);
+    const defaultTriangle = getTriangle(this.device, this.format, this.camera);
 
-    this.objects.push(defaultRect, defaultRect2);
+    defaultRect2.move(vec2.create(100, 0));
+    defaultTriangle.move(vec2.create(200, 0));
+
+    this.objects.push(defaultRect2, defaultPolygon, defaultTriangle);
   }
 
   private render() {
