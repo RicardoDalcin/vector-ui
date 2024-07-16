@@ -88,6 +88,10 @@ export class Rect implements Drawable {
     this.position = position;
   }
 
+  public getPosition() {
+    return this.position;
+  }
+
   public setHeight(height: number) {
     this.height = height;
   }

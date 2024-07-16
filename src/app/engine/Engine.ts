@@ -40,6 +40,7 @@ export class Engine {
 
   isMouseDown = false;
   mouseDownPosition: Vec2 | null = null;
+  objectPositionAtMouseDown: Vec2 | null = null;
   selectedObject: Drawable | null = null;
   editorMode: EditorMode = EditorMode.Move;
   isDragging = false;
@@ -85,8 +86,9 @@ export class Engine {
   }
 
   private getWorldPositionPoint(position: Vec2) {
+    const positionCorrected = vec2.mulScalar(position, devicePixelRatio);
     const matrix = mat4.inverse(this.camera.getViewMatrix());
-    return vec2.transformMat4(position, matrix);
+    return vec2.transformMat4(positionCorrected, matrix);
   }
 
   public onMouseDown(options: MouseEventOptions) {
@@ -105,6 +107,9 @@ export class Engine {
       } else {
         this.selectedObject = null;
       }
+
+      this.objectPositionAtMouseDown =
+        this.selectedObject?.getPosition() ?? null;
     }
   }
 
@@ -150,7 +155,17 @@ export class Engine {
     }
 
     if (this.editorMode === EditorMode.Move) {
-      this.selectedObject?.move(options.movement);
+      const movement = vec2.sub(
+        position,
+        this.mouseDownPosition ?? vec2.create(),
+      );
+
+      const newPosition = vec2.add(
+        this.objectPositionAtMouseDown ?? vec2.create(),
+        movement,
+      );
+
+      this.selectedObject?.setPosition(newPosition);
       return;
     }
 

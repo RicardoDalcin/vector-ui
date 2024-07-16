@@ -6,6 +6,7 @@ export interface Drawable {
   isPointColliding(point: Vec2): boolean;
   draw(passEncoder: GPURenderPassEncoder): void;
   move(delta: Vec2): void;
+  getPosition(): Vec2;
   setPosition(position: Vec2): void;
   setHeight(height: number): void;
   setWidth(width: number): void;
