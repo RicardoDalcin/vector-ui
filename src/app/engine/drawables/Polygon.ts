@@ -4,6 +4,7 @@ import { BufferUtils } from "../BufferUtils";
 import { BasicMaterial } from "../materials/BasicMaterial/BasicMaterial";
 import { type Camera } from "../entities/Camera";
 import { v4 as uuidv4 } from "uuid";
+import Delaunator from "delaunator";
 
 export function getRect(
   device: GPUDevice,
@@ -18,9 +19,7 @@ export function getRect(
     0.0, 0.0, // top left
   ]);
 
-  const indices = new Uint16Array([0, 1, 2, 2, 3, 0]);
-
-  return new Polygon(device, format, camera, vertices, indices);
+  return new Polygon(device, format, camera, vertices);
 }
 
 export function getTriangle(
@@ -35,9 +34,40 @@ export function getTriangle(
     1.0, 1.0, // top right
   ]);
 
-  const indices = new Uint16Array([0, 1, 2, 2, 1, 0]);
+  return new Polygon(device, format, camera, vertices);
+}
 
-  return new Polygon(device, format, camera, vertices, indices);
+function generatePolygonVertices(n: number): Float32Array {
+  if (n < 3) {
+    throw new Error("A polygon must have at least 3 sides.");
+  }
+
+  const vertices = new Float32Array(n * 2);
+  const angleStep = (2 * Math.PI) / n; // Angle between vertices
+
+  // Adjust the starting angle so that the top middle point is (0.5, 1.0)
+  // The top middle point corresponds to the angle -π/2 from the positive x-axis
+  const startAngle = -Math.PI / 2;
+
+  for (let i = 0; i < n; i++) {
+    const angle = startAngle + angleStep * i;
+    const x = 0.5 + 0.5 * Math.cos(angle); // Centered at (0.5, 0.5) and scaled
+    const y = 0.5 + 0.5 * Math.sin(angle); // Centered at (0.5, 0.5) and scaled
+    vertices[i * 2] = x;
+    vertices[i * 2 + 1] = y;
+  }
+
+  return vertices;
+}
+
+export function getPolygon(
+  device: GPUDevice,
+  format: GPUTextureFormat,
+  camera: Camera,
+  sides: number,
+) {
+  const vertices = generatePolygonVertices(sides);
+  return new Polygon(device, format, camera, vertices);
 }
 
 export class Polygon implements Drawable {
@@ -66,7 +96,6 @@ export class Polygon implements Drawable {
     format: GPUTextureFormat,
     camera: Camera,
     defaultVertices: Float32Array,
-    defaultIndices: Uint16Array,
   ) {
     this.id = uuidv4();
 
@@ -79,8 +108,21 @@ export class Polygon implements Drawable {
     this.rotation = 0;
 
     this.vertices = defaultVertices;
-    this.indices = defaultIndices;
     this.transform(this.DEFAULT_SIZE, this.DEFAULT_SIZE, vec2.create(200, 200));
+
+    const delaunay = new Delaunator(this.vertices);
+
+    let bufferSize = delaunay.triangles.length;
+
+    if (bufferSize % 4 !== 0) {
+      bufferSize += 4 - (bufferSize % 4);
+    }
+
+    this.indices = new Uint16Array(bufferSize);
+
+    for (let i = 0; i < delaunay.triangles.length; i++) {
+      this.indices[i] = Math.round(delaunay.triangles[i] ?? 0);
+    }
 
     this.vertexBuffer = BufferUtils.createVertexBuffer(device, this.vertices);
     this.indexBuffer = BufferUtils.createIndexBuffer(device, this.indices);
@@ -200,8 +242,6 @@ export class Polygon implements Drawable {
 
     const isInsideX = x >= objX && x <= objX + this.width;
     const isInsideY = y >= objY && y <= objY + this.height;
-
-    console.log(isInsideX, isInsideY);
 
     return isInsideX && isInsideY;
   }
