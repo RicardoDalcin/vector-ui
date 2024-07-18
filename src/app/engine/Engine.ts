@@ -254,14 +254,37 @@ export class Engine {
     this.objects.push(defaultRect, defaultTriangle, ...polygons);
   }
 
+  private multisampleTexture: GPUTexture | null = null;
+
   private render() {
     const commandEncoder = this.device.createCommandEncoder();
-    const textureView = this.context.getCurrentTexture().createView();
+    const canvasTexture = this.context.getCurrentTexture();
+
+    if (
+      !this.multisampleTexture ||
+      this.multisampleTexture.width !== canvasTexture.width ||
+      this.multisampleTexture.height !== canvasTexture.height
+    ) {
+      if (this.multisampleTexture) {
+        this.multisampleTexture.destroy();
+      }
+
+      this.multisampleTexture = this.device.createTexture({
+        size: [canvasTexture.width, canvasTexture.height],
+        format: this.format,
+        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        sampleCount: 4,
+      });
+    }
+
+    const view = this.multisampleTexture.createView();
+    const resolveTarget = canvasTexture.createView();
 
     const passEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
-          view: textureView,
+          view,
+          resolveTarget,
           clearValue: [0.1, 0.1, 0.1, 1],
           loadOp: "clear",
           storeOp: "store",

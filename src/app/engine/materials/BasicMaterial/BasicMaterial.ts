@@ -89,6 +89,9 @@ export class BasicMaterial {
         topology: "triangle-list",
       },
       layout: pipelineLayout,
+      multisample: {
+        count: 4,
+      },
     });
   }
 }
