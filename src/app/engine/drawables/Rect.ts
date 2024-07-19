@@ -38,10 +38,10 @@ export class Rect implements Drawable {
 
     // prettier-ignore
     this.vertices = new Float32Array([
-      0.0, 1.0, 1.0, 0.0, 1.0, // bottom left
-      1.0, 1.0, 0.0, 0.0, 1.0, // bottom right
-      1.0, 0.0, 1.0, 0.0, 0.0, // top right
-      0.0, 0.0, 0.0, 1.0, 0.0, // top left
+      0.0, 1.0, // bottom left
+      1.0, 1.0, // bottom right
+      1.0, 0.0, // top right
+      0.0, 0.0, // top left
     ]);
     this.vertexBuffer = BufferUtils.createVertexBuffer(device, this.vertices);
 
