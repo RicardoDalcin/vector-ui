@@ -1,6 +1,7 @@
 import { type Drawable } from "./drawables/Drawable";
 import { getPolygon, getRect, getTriangle } from "./drawables/Polygon";
 import { Rect } from "./drawables/Rect";
+import { ShapePath } from "./drawables/Shape";
 import { Camera } from "./entities/Camera";
 import { mat4, vec2, type Vec2 } from "wgpu-matrix";
 
@@ -251,7 +252,10 @@ export class Engine {
       polygon.move(vec2.create(100 * (i + 1), 0)),
     );
 
-    this.objects.push(defaultRect, defaultTriangle, ...polygons);
+    const defaultShape = new ShapePath(this.device, this.format, this.camera);
+    defaultShape.transform(100, 100, vec2.create(100, 100));
+
+    this.objects.push(defaultShape, defaultRect, defaultTriangle, ...polygons);
   }
 
   private multisampleTexture: GPUTexture | null = null;
