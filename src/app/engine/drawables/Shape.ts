@@ -4,9 +4,40 @@ import { type Camera } from "../entities/Camera";
 import { BasicMaterial } from "../materials/BasicMaterial/BasicMaterial";
 import { BufferUtils } from "../BufferUtils";
 import { Path } from "../vector/Path";
-import { type Vec2, vec2 } from "wgpu-matrix";
+import { mat4, type Vec2, vec2 } from "wgpu-matrix";
 import Delaunator from "delaunator";
 import { type Drawable } from "./Drawable";
+
+export function getRect(
+  device: GPUDevice,
+  format: GPUTextureFormat,
+  camera: Camera,
+) {
+  const shape = new ShapePath(device, format, camera);
+
+  shape.path.moveTo(vec2.create(0, 0));
+  shape.path.lineTo(vec2.create(1, 0));
+  shape.path.lineTo(vec2.create(1, 1));
+  shape.path.lineTo(vec2.create(0, 1));
+  shape.path.close();
+
+  return shape;
+}
+
+export function getTriangle(
+  device: GPUDevice,
+  format: GPUTextureFormat,
+  camera: Camera,
+) {
+  const shape = new ShapePath(device, format, camera);
+
+  shape.path.moveTo(vec2.create(0.5, 0));
+  shape.path.lineTo(vec2.create(0, 1));
+  shape.path.lineTo(vec2.create(1, 1));
+  shape.path.close();
+
+  return shape;
+}
 
 export class ShapePath implements Drawable {
   id: string;
@@ -34,12 +65,6 @@ export class ShapePath implements Drawable {
 
     this.path = new Path();
 
-    this.path.moveTo(vec2.create(0, 0));
-    this.path.lineTo(vec2.create(1, 0));
-    this.path.lineTo(vec2.create(1, 1));
-    this.path.lineTo(vec2.create(0, 1));
-    this.path.close();
-
     this.device = device;
     this.camera = camera;
 
@@ -52,24 +77,29 @@ export class ShapePath implements Drawable {
     this.material = new BasicMaterial(device, format, this.uniformBuffer);
   }
 
+  private getTransformMatrix() {
+    const x = this.position[0] ?? 0;
+    const y = this.position[1] ?? 0;
+
+    const translation = mat4.translation([x, y, 0]);
+    const scaling = mat4.scaling([this.width, this.height, 1]);
+
+    return mat4.multiply(translation, scaling);
+  }
+
   public transform(
     width: number,
     height: number,
     position: Vec2 = vec2.create(0, 0),
   ) {
+    const normalizationMatrix = mat4.inverse(this.getTransformMatrix());
+    this.path.transform(normalizationMatrix);
+
     this.width = width;
     this.height = height;
     this.position = position;
 
-    this.path.clear();
-    this.path.moveTo(position);
-    this.path.lineTo(vec2.create((position[0] ?? 0) + width, position[1] ?? 0));
-    this.path.lineTo(
-      vec2.create((position[0] ?? 0) + width, (position[1] ?? 0) + height),
-    );
-    this.path.lineTo(vec2.create(position[0], (position[1] ?? 0) + height));
-    this.path.close();
-
+    this.path.transform(this.getTransformMatrix());
     this.rebuild();
   }
 
@@ -101,8 +131,6 @@ export class ShapePath implements Drawable {
 
       const indexBuffer = BufferUtils.createIndexBuffer(this.device, indices);
       this.indexBuffers.push(indexBuffer);
-
-      console.log(shape, indices);
     });
   }
 
@@ -115,8 +143,6 @@ export class ShapePath implements Drawable {
 
     const isInsideX = x >= objX && x <= objX + this.width;
     const isInsideY = y >= objY && y <= objY + this.height;
-
-    console.log(x, y, isInsideX, isInsideY);
 
     return isInsideX && isInsideY;
   }

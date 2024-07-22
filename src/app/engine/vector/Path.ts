@@ -1,4 +1,4 @@
-import { type Vec2 } from "wgpu-matrix";
+import { type Mat4, vec2, type Vec2 } from "wgpu-matrix";
 
 type MoveTo = { type: "move"; point: Vec2 };
 
@@ -52,6 +52,47 @@ export class Path {
 
   clear() {
     this.elements = [];
+  }
+
+  transform(transformMatrix: Mat4) {
+    this.elements = this.elements.map((element) => {
+      if (element.type === "move") {
+        return {
+          type: "move",
+          point: vec2.transformMat4(element.point, transformMatrix),
+        };
+      }
+
+      if (element.type === "line") {
+        return {
+          type: "line",
+          point: vec2.transformMat4(element.point, transformMatrix),
+        };
+      }
+
+      if (element.type === "quadratic") {
+        return {
+          type: "quadratic",
+          point: vec2.transformMat4(element.point, transformMatrix),
+          control: vec2.transformMat4(element.control, transformMatrix),
+        };
+      }
+
+      if (element.type === "cubic") {
+        return {
+          type: "cubic",
+          point: vec2.transformMat4(element.point, transformMatrix),
+          control1: vec2.transformMat4(element.control1, transformMatrix),
+          control2: vec2.transformMat4(element.control2, transformMatrix),
+        };
+      }
+
+      if (element.type === "close") {
+        return { type: "close" };
+      }
+
+      throw new Error("Invalid path element type");
+    });
   }
 
   getVertices(): VertexList[] {

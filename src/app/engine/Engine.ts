@@ -1,7 +1,7 @@
 import { type Drawable } from "./drawables/Drawable";
-import { getPolygon, getRect, getTriangle } from "./drawables/Polygon";
+import { getPolygon } from "./drawables/Polygon";
 import { Rect } from "./drawables/Rect";
-import { ShapePath } from "./drawables/Shape";
+import { getRect, getTriangle, ShapePath } from "./drawables/Shape";
 import { Camera } from "./entities/Camera";
 import { mat4, vec2, type Vec2 } from "wgpu-matrix";
 
@@ -242,8 +242,8 @@ export class Engine {
   }
 
   private createAssets() {
-    const defaultRect = getRect(this.device, this.format, this.camera);
-    const defaultTriangle = getTriangle(this.device, this.format, this.camera);
+    // const defaultRect = getRect(this.device, this.format, this.camera);
+    // const defaultTriangle = getTriangle(this.device, this.format, this.camera);
     const polygons = Array.from({ length: 100 }, (_, i) =>
       getPolygon(this.device, this.format, this.camera, i + 3),
     );
@@ -252,10 +252,13 @@ export class Engine {
       polygon.move(vec2.create(100 * (i + 1), 0)),
     );
 
-    const defaultShape = new ShapePath(this.device, this.format, this.camera);
+    const defaultShape = getRect(this.device, this.format, this.camera);
     defaultShape.transform(100, 100, vec2.create(100, 100));
 
-    this.objects.push(defaultShape, defaultRect, defaultTriangle, ...polygons);
+    const defaultTriangle = getTriangle(this.device, this.format, this.camera);
+    defaultTriangle.transform(100, 100, vec2.create(100, 100));
+
+    this.objects.push(defaultShape, defaultTriangle, ...polygons);
   }
 
   private multisampleTexture: GPUTexture | null = null;
