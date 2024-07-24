@@ -4,7 +4,7 @@ import { BufferUtils } from "../BufferUtils";
 import { BasicMaterial } from "../materials/BasicMaterial/BasicMaterial";
 import { type Camera } from "../entities/Camera";
 import { v4 as uuidv4 } from "uuid";
-import Delaunator from "delaunator";
+import earcut from "earcut";
 
 export function getRect(
   device: GPUDevice,
@@ -110,9 +110,8 @@ export class Polygon implements Drawable {
     this.vertices = defaultVertices;
     this.transform(this.DEFAULT_SIZE, this.DEFAULT_SIZE, vec2.create(200, 200));
 
-    const delaunay = new Delaunator(this.vertices);
-
-    let bufferSize = delaunay.triangles.length;
+    const triangles = earcut(this.vertices);
+    let bufferSize = triangles.length;
 
     if (bufferSize % 4 !== 0) {
       bufferSize += 4 - (bufferSize % 4);
@@ -120,8 +119,8 @@ export class Polygon implements Drawable {
 
     this.indices = new Uint16Array(bufferSize);
 
-    for (let i = 0; i < delaunay.triangles.length; i++) {
-      this.indices[i] = Math.round(delaunay.triangles[i] ?? 0);
+    for (let i = 0; i < triangles.length; i++) {
+      this.indices[i] = Math.round(triangles[i] ?? 0);
     }
 
     this.vertexBuffer = BufferUtils.createVertexBuffer(device, this.vertices);

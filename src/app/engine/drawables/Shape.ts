@@ -5,7 +5,7 @@ import { BasicMaterial } from "../materials/BasicMaterial/BasicMaterial";
 import { BufferUtils } from "../BufferUtils";
 import { Path } from "../vector/Path";
 import { mat4, type Vec2, vec2 } from "wgpu-matrix";
-import Delaunator from "delaunator";
+import earcut from "earcut";
 import { type Drawable } from "./Drawable";
 
 export function getRect(
@@ -110,8 +110,7 @@ export class ShapePath implements Drawable {
     this.indexBuffers = [];
 
     this.shapes.forEach((shape) => {
-      const delaunay = new Delaunator(shape);
-      const triangles = delaunay.triangles;
+      const triangles = earcut(shape);
       let bufferSize = triangles.length;
 
       if (bufferSize % 4 !== 0) {
