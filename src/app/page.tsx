@@ -11,6 +11,12 @@ import {
   type EngineCallbacks,
 } from "./engine/Engine";
 import { vec2 } from "wgpu-matrix";
+import {
+  HandIcon,
+  MoveIcon,
+  PenIcon,
+  RectangleIcon,
+} from "./_components/icons";
 
 const EventUtils = {
   isControlPressed: (event: KeyboardEvent | WheelEvent) => {
@@ -112,6 +118,11 @@ export default function Home() {
         if (event.key === "h" && !isControlPressed) {
           event.preventDefault();
           changeEditorMode(EditorMode.Hand);
+        }
+
+        if (event.key === "p" && !isControlPressed) {
+          event.preventDefault();
+          changeEditorMode(EditorMode.Pen);
         }
 
         if (event.key === " " && !isControlPressed) {
@@ -234,32 +245,53 @@ export default function Home() {
         },
       )}
     >
-      <nav className="h-[56px] w-full bg-neutral-800">
+      <nav className="flex h-[56px] w-full bg-neutral-800">
         <button
           onClick={() => changeEditorMode(EditorMode.Move)}
-          className={classNames("h-[56px] w-[56px]", {
-            "bg-blue-500": editorMode === EditorMode.Move,
-          })}
+          className={classNames(
+            "flex h-[56px] w-[56px] items-center justify-center",
+            {
+              "bg-blue-500": editorMode === EditorMode.Move,
+            },
+          )}
         >
-          V
+          <MoveIcon className="h-7 w-7" />
         </button>
 
         <button
           onClick={() => changeEditorMode(EditorMode.Rectangle)}
-          className={classNames("h-[56px] w-[56px]", {
-            "bg-blue-500": editorMode === EditorMode.Rectangle,
-          })}
+          className={classNames(
+            "flex h-[56px] w-[56px] items-center justify-center",
+            {
+              "bg-blue-500": editorMode === EditorMode.Rectangle,
+            },
+          )}
         >
-          R
+          <RectangleIcon className="h-6 w-6" />
         </button>
 
         <button
           onClick={() => changeEditorMode(EditorMode.Hand)}
-          className={classNames("h-[56px] w-[56px]", {
-            "bg-blue-500": editorMode === EditorMode.Hand,
-          })}
+          className={classNames(
+            "flex h-[56px] w-[56px] items-center justify-center",
+            {
+              "bg-blue-500": editorMode === EditorMode.Hand,
+            },
+          )}
         >
-          H
+          <HandIcon className="h-7 w-7" />
+        </button>
+
+        <button
+          onClick={() => changeEditorMode(EditorMode.Pen)}
+          className={classNames(
+            "flex h-[56px] w-[56px] items-center justify-center",
+            {
+              "bg-blue-500": editorMode === EditorMode.Pen,
+            },
+          )}
+        >
+          <PenIcon className="h-6 w-6" />
         </button>
       </nav>
 

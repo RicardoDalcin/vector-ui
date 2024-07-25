@@ -19,6 +19,7 @@ export enum EditorMode {
   Move = "move",
   Hand = "hand",
   Rectangle = "rectangle",
+  Pen = "pen",
 }
 
 export enum ScaleDirection {
@@ -258,7 +259,7 @@ export class Engine {
     const defaultTriangle = getTriangle(this.device, this.format, this.camera);
     defaultTriangle.transform(100, 100, vec2.create(100, 100));
 
-    this.objects.push(defaultShape, defaultTriangle, ...polygons);
+    this.objects.push(defaultShape);
   }
 
   private multisampleTexture: GPUTexture | null = null;
