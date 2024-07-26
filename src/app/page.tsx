@@ -29,6 +29,8 @@ const EventUtils = {
   ): MouseEventOptions {
     const BUTTON_TYPES = ["left", "middle", "right"] as const;
     const button = BUTTON_TYPES[event.button] ?? "left";
+    const ctrlKey = event.ctrlKey;
+    const shiftKey = event.shiftKey;
 
     const x = event.clientX - canvas.offsetLeft;
     const y = event.clientY - canvas.offsetTop;
@@ -37,6 +39,10 @@ const EventUtils = {
     return {
       button,
       position,
+      modifiers: {
+        ctrlKey,
+        shiftKey,
+      },
     };
   },
   getMouseMoveEvent(

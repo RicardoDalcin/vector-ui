@@ -103,7 +103,7 @@ export class ShapePath implements Drawable {
     this.rebuild();
   }
 
-  private rebuild() {
+  rebuild() {
     this.shapes = this.path.getVertices();
     this.indices = [];
     this.vertexBuffers = [];

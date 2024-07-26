@@ -8,6 +8,10 @@ import { mat4, vec2, type Vec2 } from "wgpu-matrix";
 export type MouseEventOptions = {
   button: "left" | "right" | "middle";
   position: Vec2;
+  modifiers: {
+    ctrlKey: boolean;
+    shiftKey: boolean;
+  };
 };
 
 export type MouseMoveOptions = {
@@ -56,6 +60,7 @@ export class Engine {
   mouseDownPosition: Vec2 | null = null;
   objectPositionAtMouseDown: Vec2 | null = null;
   selectedObject: Drawable | null = null;
+  penObject: ShapePath | null = null;
   editorMode: EditorMode = EditorMode.Move;
   isDragging = false;
 
@@ -135,7 +140,13 @@ export class Engine {
         return;
       }
 
-      if (this.editorMode === EditorMode.Rectangle && !this.isDragging) {
+      this.isMouseDown = false;
+
+      if (this.isDragging) {
+        return;
+      }
+
+      if (this.editorMode === EditorMode.Rectangle) {
         if (!this.selectedObject) {
           const newRect = new Rect(this.device, this.format, this.camera);
 
@@ -149,10 +160,29 @@ export class Engine {
         }
 
         this.setEditorMode(EditorMode.Move);
+        return;
       }
 
-      this.isMouseDown = false;
-      this.selectedObject = null;
+      if (this.editorMode === EditorMode.Pen) {
+        if (!this.penObject) {
+          this.penObject = new ShapePath(this.device, this.format, this.camera);
+          this.penObject.path.moveTo(position);
+          this.penObject.rebuild();
+          this.objects.push(this.penObject);
+          return;
+        }
+
+        this.penObject.path.lineTo(position);
+        this.penObject.rebuild();
+
+        if (options.modifiers.ctrlKey) {
+          this.penObject.path.close();
+          this.penObject.rebuild();
+          this.penObject = null;
+        }
+
+        return;
+      }
     }
   }
 

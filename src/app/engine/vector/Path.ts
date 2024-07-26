@@ -97,6 +97,7 @@ export class Path {
 
   getVertices(): VertexList[] {
     const vertices: number[][] = [];
+    let currentShapeIndex = 0;
     let currentShape: number[] = [];
 
     for (const element of this.elements) {
@@ -105,17 +106,20 @@ export class Path {
           vertices.push(currentShape);
         }
         currentShape = [element.point[0] ?? 0, element.point[1] ?? 0];
+        vertices[currentShapeIndex] = currentShape;
         continue;
       }
 
       if (element.type === "line") {
         currentShape.push(element.point[0] ?? 0, element.point[1] ?? 0);
+        vertices[currentShapeIndex] = currentShape;
         continue;
       }
 
       if (element.type === "close") {
-        vertices.push(currentShape);
+        vertices[currentShapeIndex] = currentShape;
         currentShape = [];
+        currentShapeIndex += 1;
         continue;
       }
 
