@@ -1,4 +1,5 @@
 import { type Mat4, vec2, type Vec2 } from "wgpu-matrix";
+import { type Geom, union } from "polygon-clipping";
 
 type MoveTo = { type: "move"; point: Vec2 };
 
@@ -126,6 +127,29 @@ export class Path {
       throw new Error("Invalid path element type");
     }
 
-    return vertices.map((vertex) => new Float32Array(vertex));
+    if (currentShape.length > 1) {
+      vertices.push(currentShape);
+    }
+
+    const splitVertices = this.getSplitIntersections(vertices);
+
+    return splitVertices.map((vertex) => new Float32Array(vertex));
+  }
+
+  private getSplitIntersections(vertices: number[][]): number[][] {
+    const geometry: Geom = vertices.map((polygon) => {
+      const pairs = [];
+      for (let i = 0; i < polygon.length; i += 2) {
+        pairs.push([polygon[i] ?? 0, polygon[i + 1] ?? 0] as [number, number]);
+      }
+      return pairs;
+    });
+
+    const unionResult = union(geometry);
+
+    const flattened = unionResult.flat().map((poly) => poly.flat());
+    console.log(flattened);
+
+    return flattened;
   }
 }
