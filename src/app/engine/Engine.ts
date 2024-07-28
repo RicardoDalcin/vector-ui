@@ -39,6 +39,8 @@ export enum ScaleDirection {
 
 export type EngineCallbacks = Partial<{
   onEditorModeChange: (mode: EditorMode) => void;
+  onNewObject: (object: Drawable) => void;
+  onObjectUpdate: (object: Drawable) => void;
 }>;
 
 export class Engine {
@@ -104,6 +106,11 @@ export class Engine {
     this.isDragging = isDragging;
   }
 
+  private addObject(object: Drawable) {
+    this.objects.push(object);
+    this.callbacks.onNewObject?.(object);
+  }
+
   private getWorldPositionPoint(position: Vec2) {
     const positionCorrected = vec2.mulScalar(position, devicePixelRatio);
     const matrix = mat4.inverse(this.camera.getViewMatrix());
@@ -156,7 +163,7 @@ export class Engine {
               vec2.create(newRect.width / 2, newRect.height / 2),
             ),
           );
-          this.objects.push(newRect);
+          this.addObject(newRect);
         }
 
         this.setEditorMode(EditorMode.Move);
@@ -168,7 +175,7 @@ export class Engine {
           this.penObject = new ShapePath(this.device, this.format, this.camera);
           this.penObject.path.moveTo(position);
           this.penObject.rebuild();
-          this.objects.push(this.penObject);
+          this.addObject(this.penObject);
           return;
         }
 
@@ -225,7 +232,7 @@ export class Engine {
       if (!this.selectedObject) {
         const newRect = new Rect(this.device, this.format, this.camera);
         newRect.setPosition(this.mouseDownPosition);
-        this.objects.push(newRect);
+        this.addObject(newRect);
         this.selectedObject = newRect;
       }
 
@@ -289,7 +296,7 @@ export class Engine {
     const defaultTriangle = getTriangle(this.device, this.format, this.camera);
     defaultTriangle.transform(100, 100, vec2.create(100, 100));
 
-    this.objects.push(defaultShape);
+    this.addObject(defaultShape);
   }
 
   private multisampleTexture: GPUTexture | null = null;

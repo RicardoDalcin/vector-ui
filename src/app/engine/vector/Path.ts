@@ -128,7 +128,7 @@ export class Path {
     }
 
     if (currentShape.length > 1) {
-      vertices.push(currentShape);
+      vertices[currentShapeIndex] = currentShape;
     }
 
     const splitVertices = this.getSplitIntersections(vertices);

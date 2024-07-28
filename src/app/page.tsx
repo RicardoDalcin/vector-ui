@@ -17,9 +17,10 @@ import {
   PenIcon,
   RectangleIcon,
 } from "./_components/icons";
+import { type Drawable } from "./engine/drawables/Drawable";
 
 const EventUtils = {
-  isControlPressed: (event: KeyboardEvent | WheelEvent) => {
+  isControlPressed: (event: MouseEvent | KeyboardEvent | WheelEvent) => {
     const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
     return isMac ? event.metaKey : event.ctrlKey;
   },
@@ -29,7 +30,7 @@ const EventUtils = {
   ): MouseEventOptions {
     const BUTTON_TYPES = ["left", "middle", "right"] as const;
     const button = BUTTON_TYPES[event.button] ?? "left";
-    const ctrlKey = event.ctrlKey;
+    const ctrlKey = this.isControlPressed(event);
     const shiftKey = event.shiftKey;
 
     const x = event.clientX - canvas.offsetLeft;
@@ -80,6 +81,7 @@ export default function Home() {
   const [editorMode, setEditorMode] = useState<EditorMode>(EditorMode.Move);
   const [isDragging, setIsDragging] = useState(false);
   const [isMouseDown, setIsMouseDown] = useState(false);
+  const [objects, setObjects] = useState<Map<string, Drawable>>(new Map());
 
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -225,6 +227,20 @@ export default function Home() {
         onEditorModeChange: (mode) => {
           setEditorMode(mode);
         },
+        onNewObject: (object) => {
+          setObjects((objects) => {
+            const onNewObjects = new Map(objects);
+            onNewObjects.set(object.id, object);
+            return onNewObjects;
+          });
+        },
+        onObjectUpdate: (object) => {
+          setObjects((objects) => {
+            const onNewObjects = new Map(objects);
+            onNewObjects.set(object.id, object);
+            return onNewObjects;
+          });
+        },
       });
       bindEngineEvents(engine.current, container);
       engine.current.setEditorMode(EditorMode.Move);
@@ -304,15 +320,14 @@ export default function Home() {
       <div className="flex h-full w-full divide-x divide-neutral-700">
         <div className="h-full w-72 shrink-0 bg-neutral-800">
           <ul className="flex flex-col">
-            <li className="flex h-10 items-center border border-transparent px-4 hover:border-blue-500">
-              Frame 1
-            </li>
-            <li className="flex h-10 items-center border border-transparent px-4 hover:border-blue-500">
-              Frame 2
-            </li>
-            <li className="flex h-10 items-center border border-transparent px-4 hover:border-blue-500">
-              Frame 3
-            </li>
+            {Array.from(objects.values()).map((object) => (
+              <li
+                key={object.id}
+                className="flex h-10 items-center border border-transparent px-4 hover:border-blue-500"
+              >
+                Layer {object.id.substring(0, 4)}
+              </li>
+            ))}
           </ul>
         </div>
 
