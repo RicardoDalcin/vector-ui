@@ -148,7 +148,6 @@ export class Path {
     const unionResult = union(geometry);
 
     const flattened = unionResult.flat().map((poly) => poly.flat());
-    console.log(flattened);
 
     return flattened;
   }

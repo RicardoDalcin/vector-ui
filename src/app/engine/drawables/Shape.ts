@@ -7,6 +7,7 @@ import { Path } from "../vector/Path";
 import { mat4, type Vec2, vec2 } from "wgpu-matrix";
 import earcut from "earcut";
 import { type Drawable } from "./Drawable";
+import { BoundingBox } from "./Object";
 
 export function getRect(
   device: GPUDevice,
@@ -54,6 +55,7 @@ export class ShapePath implements Drawable {
   indexBuffers: GPUBuffer[] = [];
 
   path: Path;
+  boundingBox: BoundingBox;
 
   position = vec2.create(0, 0);
   width = 1;
@@ -68,6 +70,7 @@ export class ShapePath implements Drawable {
     this.device = device;
     this.camera = camera;
 
+    this.boundingBox = new BoundingBox(new Float32Array(0));
     this.rebuild();
 
     this.uniformBuffer = BufferUtils.createUniformBuffer(
@@ -109,7 +112,10 @@ export class ShapePath implements Drawable {
     this.vertexBuffers = [];
     this.indexBuffers = [];
 
+    let allVerticesSize = 0;
+
     this.shapes.forEach((shape) => {
+      allVerticesSize += shape.length;
       const triangles = earcut(shape);
       let bufferSize = triangles.length;
 
@@ -131,17 +137,32 @@ export class ShapePath implements Drawable {
       const indexBuffer = BufferUtils.createIndexBuffer(this.device, indices);
       this.indexBuffers.push(indexBuffer);
     });
+
+    const flattenedVertices = new Float32Array(allVerticesSize);
+
+    let offset = 0;
+
+    this.shapes.forEach((shape) => {
+      shape.forEach((vertex) => {
+        flattenedVertices[offset++] = vertex;
+      });
+    });
+
+    this.boundingBox.updateGeometry(flattenedVertices);
+    this.boundingBox.getSize();
   }
 
   public isPointColliding(point: Vec2): boolean {
     const x = point[0] ?? 0;
     const y = point[1] ?? 0;
 
-    const objX = this.position[0] ?? 0;
-    const objY = this.position[1] ?? 0;
+    const position = this.boundingBox.getPosition();
+    const objX = position[0] ?? 0;
+    const objY = position[1] ?? 0;
+    const { width, height } = this.boundingBox.getSize();
 
-    const isInsideX = x >= objX && x <= objX + this.width;
-    const isInsideY = y >= objY && y <= objY + this.height;
+    const isInsideX = x >= objX && x <= objX + width;
+    const isInsideY = y >= objY && y <= objY + height;
 
     return isInsideX && isInsideY;
   }
