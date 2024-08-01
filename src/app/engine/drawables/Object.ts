@@ -30,11 +30,6 @@ export class BoundingBox {
     const maxX = this.boundingBoxVertices[2] ?? 0;
     const maxY = this.boundingBoxVertices[3] ?? 0;
 
-    console.log("Bounding box", minX, maxX, minY, maxY, {
-      width: maxX - minX,
-      height: maxY - minY,
-    });
-
     return {
       width: maxX - minX,
       height: maxY - minY,
@@ -52,8 +47,6 @@ export class BoundingBox {
     if (this.vertices.length < 3) {
       return;
     }
-
-    console.log(this.vertices);
 
     let minX = Infinity;
     let minY = Infinity;
