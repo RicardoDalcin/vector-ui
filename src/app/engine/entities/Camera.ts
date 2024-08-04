@@ -1,4 +1,4 @@
-import { mat4, vec2, vec3, type Vec2 } from "wgpu-matrix";
+import { mat4, vec2, type Vec2 } from "wgpu-matrix";
 
 // Figma like design tool for WebGPU
 // Camera is 2D with pan and zoom
