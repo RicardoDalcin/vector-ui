@@ -20,17 +20,20 @@ import {
 import { type Drawable } from "./engine/drawables/Drawable";
 
 const EventUtils = {
-  isControlPressed: (event: MouseEvent | KeyboardEvent | WheelEvent) => {
-    const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+  isControlPressed: (
+    event: MouseEvent | KeyboardEvent | WheelEvent,
+    isMac: boolean,
+  ) => {
     return isMac ? event.metaKey : event.ctrlKey;
   },
   getMouseEvent(
     event: MouseEvent,
     canvas: HTMLCanvasElement,
+    isMac: boolean,
   ): MouseEventOptions {
     const BUTTON_TYPES = ["left", "middle", "right"] as const;
     const button = BUTTON_TYPES[event.button] ?? "left";
-    const ctrlKey = this.isControlPressed(event);
+    const ctrlKey = this.isControlPressed(event, isMac);
     const shiftKey = event.shiftKey;
 
     const x = event.clientX - canvas.offsetLeft;
@@ -89,7 +92,11 @@ export default function Home() {
 
   const initialized = useRef(false);
 
-  const isMacOs = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+  const [isMacOs, setIsMacOs] = useState(false);
+
+  useEffect(() => {
+    setIsMacOs(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
+  }, []);
 
   const changeEditorMode = useCallback((mode: EditorMode) => {
     engine.current?.setEditorMode(mode);
@@ -101,7 +108,7 @@ export default function Home() {
       window.addEventListener("resize", () => engine.resize());
 
       window.addEventListener("keydown", (event) => {
-        const isControlPressed = EventUtils.isControlPressed(event);
+        const isControlPressed = EventUtils.isControlPressed(event, isMacOs);
 
         if ((event.key === "=" || event.key === "+") && isControlPressed) {
           event.preventDefault();
@@ -159,7 +166,7 @@ export default function Home() {
       container.addEventListener(
         "wheel",
         (event) => {
-          const isControlPressed = EventUtils.isControlPressed(event);
+          const isControlPressed = EventUtils.isControlPressed(event, isMacOs);
 
           if (isControlPressed) {
             event.preventDefault();
@@ -182,7 +189,7 @@ export default function Home() {
           return;
         }
         event.preventDefault();
-        engine.onMouseDown(EventUtils.getMouseEvent(event, canvas));
+        engine.onMouseDown(EventUtils.getMouseEvent(event, canvas, isMacOs));
         setIsMouseDown(true);
       });
 
@@ -192,7 +199,7 @@ export default function Home() {
           return;
         }
         event.preventDefault();
-        engine.onMouseUp(EventUtils.getMouseEvent(event, canvas));
+        engine.onMouseUp(EventUtils.getMouseEvent(event, canvas, isMacOs));
         setIsMouseDown(false);
       });
 
@@ -205,7 +212,7 @@ export default function Home() {
         engine.onMouseMove(EventUtils.getMouseMoveEvent(event, canvas));
       });
     },
-    [changeEditorMode],
+    [changeEditorMode, isMacOs],
   );
 
   useEffect(() => {
