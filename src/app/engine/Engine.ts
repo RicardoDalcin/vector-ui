@@ -126,7 +126,7 @@ export class Engine {
 
       if (this.TARGET_EDITOR_MODES.includes(this.editorMode)) {
         const collision = this.objects.find((object) =>
-          object.isPointInBoundingBox(position),
+          object.isPointInShape(position),
         );
 
         this.selectedObject = collision ?? null;
