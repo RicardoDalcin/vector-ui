@@ -152,7 +152,11 @@ export class ShapePath implements Drawable {
     this.boundingBox.getSize();
   }
 
-  public isPointColliding(point: Vec2): boolean {
+  public isPointInShape(point: Vec2): boolean {
+    return false;
+  }
+
+  public isPointInBoundingBox(point: Vec2): boolean {
     const x = point[0] ?? 0;
     const y = point[1] ?? 0;
 
