@@ -12,6 +12,7 @@ export class BasicMaterial {
     device: GPUDevice,
     format: GPUTextureFormat,
     viewProjectionMatrixBuffer: GPUBuffer,
+    topology: GPUPrimitiveTopology = "triangle-list",
   ) {
     this.device = device;
     this.format = format;
@@ -86,7 +87,7 @@ export class BasicMaterial {
       vertex: vertexState,
       fragment: fragmentState,
       primitive: {
-        topology: "triangle-list",
+        topology,
       },
       layout: pipelineLayout,
       multisample: {

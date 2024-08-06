@@ -1,4 +1,6 @@
-import { vec2, type Vec2 } from "wgpu-matrix";
+import { type Mat4, vec2, type Vec2 } from "wgpu-matrix";
+import { BasicMaterial } from "../materials/BasicMaterial/BasicMaterial";
+import { BufferUtils } from "../BufferUtils";
 
 export interface Object {
   id: string;
@@ -18,9 +20,34 @@ export class BoundingBox {
   private vertices: Float32Array;
   private boundingBoxVertices: Float32Array;
 
-  constructor(vertices: Float32Array) {
+  private device: GPUDevice;
+
+  private uniformBuffer: GPUBuffer;
+  private vertexBuffer!: GPUBuffer;
+
+  private material: BasicMaterial;
+
+  constructor(
+    vertices: Float32Array,
+    device: GPUDevice,
+    format: GPUTextureFormat,
+  ) {
+    this.device = device;
+
     this.vertices = vertices;
     this.boundingBoxVertices = new Float32Array(4);
+
+    this.uniformBuffer = BufferUtils.createUniformBuffer(
+      device,
+      new Float32Array(16),
+    );
+    this.material = new BasicMaterial(
+      device,
+      format,
+      this.uniformBuffer,
+      "line-strip",
+    );
+
     this.rebuild();
   }
 
@@ -78,10 +105,42 @@ export class BoundingBox {
     this.boundingBoxVertices[1] = minY;
     this.boundingBoxVertices[2] = maxX;
     this.boundingBoxVertices[3] = maxY;
+
+    // prettier-ignore
+    const vertices = new Float32Array([
+      this.boundingBoxVertices[0], this.boundingBoxVertices[1],
+      this.boundingBoxVertices[0], this.boundingBoxVertices[3],
+      this.boundingBoxVertices[2], this.boundingBoxVertices[3],
+      this.boundingBoxVertices[2], this.boundingBoxVertices[1],
+      this.boundingBoxVertices[0], this.boundingBoxVertices[1],
+    ])
+
+    this.vertexBuffer = BufferUtils.createVertexBuffer(this.device, vertices);
   }
 
   public updateGeometry(vertices: Float32Array) {
     this.vertices = vertices;
     this.rebuild();
+  }
+
+  public draw(passEncoder: GPURenderPassEncoder, cameraMatrix: Mat4) {
+    if (this.vertices.length < 3) {
+      return;
+    }
+
+    const asArrayBuffer = new Float32Array(cameraMatrix);
+
+    this.device.queue.writeBuffer(
+      this.uniformBuffer,
+      0,
+      asArrayBuffer.buffer,
+      asArrayBuffer.byteOffset,
+      asArrayBuffer.byteLength,
+    );
+
+    passEncoder.setPipeline(this.material.pipeline);
+    passEncoder.setVertexBuffer(0, this.vertexBuffer);
+    passEncoder.setBindGroup(0, this.material.viewProjectionBindGroup);
+    passEncoder.draw(5, 1, 0, 0);
   }
 }
