@@ -192,7 +192,11 @@ export default function Home() {
             if (event.deltaY > 0) {
               engine.zoomOut();
             }
+
+            return;
           }
+
+          engine.pan(vec2.create(-event.deltaX, -event.deltaY));
         },
         { passive: false },
       );

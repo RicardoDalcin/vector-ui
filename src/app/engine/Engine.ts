@@ -95,6 +95,10 @@ export class Engine {
     this.camera.zoomOut();
   }
 
+  public pan(delta: Vec2) {
+    this.camera.pan(delta);
+  }
+
   public setEditorMode(mode: EditorMode) {
     this.editorMode = mode;
     this.isMouseDown = false;
@@ -192,6 +196,9 @@ export class Engine {
           this.penObject.path.close();
           this.penObject.rebuild();
           this.penObject.setFillColor(vec4.create(1, 1, 1, 1));
+          this.selectedObject = this.penObject;
+          this.penObject.setIsSelected(true);
+          this.setEditorMode(EditorMode.Move);
           this.penObject = null;
         }
 
