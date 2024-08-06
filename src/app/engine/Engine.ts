@@ -129,9 +129,14 @@ export class Engine {
           object.isPointInShape(position),
         );
 
-        this.selectedObject = collision ?? null;
-      } else {
+        this.selectedObject?.setIsSelected(false);
         this.selectedObject = null;
+
+        if (collision) {
+          this.selectedObject = collision ?? null;
+          this.selectedObject.setIsSelected(true);
+        }
+      } else {
       }
 
       this.objectPositionAtMouseDown =

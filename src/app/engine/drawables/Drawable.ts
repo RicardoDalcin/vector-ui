@@ -11,4 +11,5 @@ export interface Drawable {
   setPosition(position: Vec2): void;
   setHeight(height: number): void;
   setWidth(width: number): void;
+  setIsSelected(isSelected: boolean): void;
 }

@@ -57,6 +57,8 @@ export class ShapePath implements Drawable {
   path: Path;
   boundingBox: BoundingBox;
 
+  isSelected = false;
+
   position = vec2.create(0, 0);
   width = 1;
   height = 1;
@@ -221,6 +223,10 @@ export class ShapePath implements Drawable {
     this.material.setFillColor(color);
   }
 
+  public setIsSelected(isSelected: boolean) {
+    this.isSelected = isSelected;
+  }
+
   public draw(passEncoder: GPURenderPassEncoder) {
     const cameraMatrix = this.camera.getCameraMatrix();
     const asArrayBuffer = new Float32Array(cameraMatrix);
@@ -251,6 +257,8 @@ export class ShapePath implements Drawable {
       }
     }
 
-    this.boundingBox.draw(passEncoder, cameraMatrix);
+    if (this.isSelected) {
+      this.boundingBox.draw(passEncoder, cameraMatrix);
+    }
   }
 }
