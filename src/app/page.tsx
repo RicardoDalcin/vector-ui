@@ -1,7 +1,14 @@
 "use client";
 
 import classNames from "classnames";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type Component,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import {
   Engine,
@@ -18,6 +25,8 @@ import {
   RectangleIcon,
 } from "./_components/icons";
 import { type Drawable } from "./engine/drawables/Drawable";
+
+import { useHotkeys } from "react-hotkeys-hook";
 
 const EventUtils = {
   isControlPressed: (
@@ -80,6 +89,35 @@ async function setupEngine(
   return engine;
 }
 
+const EditorModeButton = ({
+  isActive,
+  onSelect,
+  shortcut,
+  children,
+}: {
+  isActive: boolean;
+  onSelect: () => void;
+  shortcut: string;
+  children: ReactNode;
+}) => {
+  useHotkeys(shortcut, onSelect, [onSelect]);
+
+  return (
+    <button
+      onClick={onSelect}
+      className={classNames(
+        "flex h-[56px] w-[56px] items-center justify-center",
+        "focus:outline-none active:outline-none",
+        {
+          "bg-blue-500": isActive,
+        },
+      )}
+    >
+      {children}
+    </button>
+  );
+};
+
 export default function Home() {
   const [editorMode, setEditorMode] = useState<EditorMode>(EditorMode.Move);
   const [isDragging, setIsDragging] = useState(false);
@@ -118,26 +156,6 @@ export default function Home() {
         if (event.key === "-" && isControlPressed) {
           event.preventDefault();
           engine.zoomOut();
-        }
-
-        if (event.key === "v" && !isControlPressed) {
-          event.preventDefault();
-          changeEditorMode(EditorMode.Move);
-        }
-
-        if (event.key === "r" && !isControlPressed) {
-          event.preventDefault();
-          changeEditorMode(EditorMode.Rectangle);
-        }
-
-        if (event.key === "h" && !isControlPressed) {
-          event.preventDefault();
-          changeEditorMode(EditorMode.Hand);
-        }
-
-        if (event.key === "p" && !isControlPressed) {
-          event.preventDefault();
-          changeEditorMode(EditorMode.Pen);
         }
 
         if (event.key === " " && !isControlPressed) {
@@ -275,53 +293,37 @@ export default function Home() {
       )}
     >
       <nav className="flex h-[56px] w-full bg-neutral-800">
-        <button
-          onClick={() => changeEditorMode(EditorMode.Move)}
-          className={classNames(
-            "flex h-[56px] w-[56px] items-center justify-center",
-            {
-              "bg-blue-500": editorMode === EditorMode.Move,
-            },
-          )}
+        <EditorModeButton
+          onSelect={() => changeEditorMode(EditorMode.Move)}
+          isActive={editorMode === EditorMode.Move}
+          shortcut="v"
         >
           <MoveIcon className="h-7 w-7" />
-        </button>
+        </EditorModeButton>
 
-        <button
-          onClick={() => changeEditorMode(EditorMode.Rectangle)}
-          className={classNames(
-            "flex h-[56px] w-[56px] items-center justify-center",
-            {
-              "bg-blue-500": editorMode === EditorMode.Rectangle,
-            },
-          )}
+        <EditorModeButton
+          onSelect={() => changeEditorMode(EditorMode.Rectangle)}
+          isActive={editorMode === EditorMode.Rectangle}
+          shortcut="r"
         >
           <RectangleIcon className="h-6 w-6" />
-        </button>
+        </EditorModeButton>
 
-        <button
-          onClick={() => changeEditorMode(EditorMode.Hand)}
-          className={classNames(
-            "flex h-[56px] w-[56px] items-center justify-center",
-            {
-              "bg-blue-500": editorMode === EditorMode.Hand,
-            },
-          )}
+        <EditorModeButton
+          onSelect={() => changeEditorMode(EditorMode.Hand)}
+          isActive={editorMode === EditorMode.Hand}
+          shortcut="h"
         >
           <HandIcon className="h-7 w-7" />
-        </button>
+        </EditorModeButton>
 
-        <button
-          onClick={() => changeEditorMode(EditorMode.Pen)}
-          className={classNames(
-            "flex h-[56px] w-[56px] items-center justify-center",
-            {
-              "bg-blue-500": editorMode === EditorMode.Pen,
-            },
-          )}
+        <EditorModeButton
+          onSelect={() => changeEditorMode(EditorMode.Pen)}
+          isActive={editorMode === EditorMode.Pen}
+          shortcut="p"
         >
           <PenIcon className="h-6 w-6" />
-        </button>
+        </EditorModeButton>
       </nav>
 
       <div className="flex h-full w-full divide-x divide-neutral-700">

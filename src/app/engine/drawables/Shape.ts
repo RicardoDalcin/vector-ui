@@ -152,7 +152,36 @@ export class ShapePath implements Drawable {
     this.boundingBox.getSize();
   }
 
-  public isPointColliding(point: Vec2): boolean {
+  private isPointInPolygonWinding(point: Vec2, vertices: Float32Array) {
+    const x = point[0] ?? 0;
+    const y = point[1] ?? 0;
+
+    let inside = false;
+
+    for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+      const xi = vertices[i * 2] ?? 0;
+      const yi = vertices[i * 2 + 1] ?? 0;
+      const xj = vertices[j * 2] ?? 0;
+      const yj = vertices[j * 2 + 1] ?? 0;
+
+      const intersect =
+        yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+
+      if (intersect) {
+        inside = !inside;
+      }
+    }
+
+    return inside;
+  }
+
+  public isPointInShape(point: Vec2) {
+    return this.shapes.some((shape) =>
+      this.isPointInPolygonWinding(point, shape),
+    );
+  }
+
+  public isPointInBoundingBox(point: Vec2): boolean {
     const x = point[0] ?? 0;
     const y = point[1] ?? 0;
 

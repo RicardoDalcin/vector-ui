@@ -100,7 +100,7 @@ export class Rect implements Drawable {
     this.width = width;
   }
 
-  public isPointColliding(point: Float32Array) {
+  public isPointInShape(point: Float32Array) {
     const x = point[0] ?? 0;
     const y = point[1] ?? 0;
 
@@ -111,6 +111,10 @@ export class Rect implements Drawable {
     const isInsideY = y >= objY && y <= objY + this.height;
 
     return isInsideX && isInsideY;
+  }
+
+  public isPointInBoundingBox(point: Float32Array) {
+    return this.isPointInShape(point);
   }
 
   draw(passEncoder: GPURenderPassEncoder) {

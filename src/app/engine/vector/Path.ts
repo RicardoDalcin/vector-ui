@@ -1,5 +1,5 @@
 import { type Mat4, vec2, type Vec2 } from "wgpu-matrix";
-import { type Geom, union } from "polygon-clipping";
+import PolygonClipping, { type Geom } from "polygon-clipping";
 
 type MoveTo = { type: "move"; point: Vec2 };
 
@@ -145,7 +145,7 @@ export class Path {
       return pairs;
     });
 
-    const unionResult = union(geometry);
+    const unionResult = PolygonClipping.union(geometry);
 
     const flattened = unionResult.flat().map((poly) => poly.flat());
 
