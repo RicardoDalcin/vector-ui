@@ -1,4 +1,4 @@
-import { type Mat4, vec2, type Vec2 } from "wgpu-matrix";
+import { type Mat4, vec2, type Vec2, vec4 } from "wgpu-matrix";
 import { BasicMaterial } from "../materials/BasicMaterial/BasicMaterial";
 import { BufferUtils } from "../BufferUtils";
 
@@ -47,6 +47,8 @@ export class BoundingBox {
       this.uniformBuffer,
       "line-strip",
     );
+
+    this.material.setFillColor(vec4.create(0.3, 0.3, 1.0, 1.0));
 
     this.rebuild();
   }
@@ -138,9 +140,11 @@ export class BoundingBox {
       asArrayBuffer.byteLength,
     );
 
+    this.material.writeBuffers();
+
     passEncoder.setPipeline(this.material.pipeline);
     passEncoder.setVertexBuffer(0, this.vertexBuffer);
-    passEncoder.setBindGroup(0, this.material.viewProjectionBindGroup);
+    this.material.setBindGroups(passEncoder);
     passEncoder.draw(5, 1, 0, 0);
   }
 }

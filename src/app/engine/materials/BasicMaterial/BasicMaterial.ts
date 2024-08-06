@@ -1,12 +1,18 @@
+import { type Vec4, vec4 } from "wgpu-matrix";
 import shader from "./shader.wgsl";
+import { BufferUtils } from "../../BufferUtils";
 
 export class BasicMaterial {
   device: GPUDevice;
   format: GPUTextureFormat;
   viewProjectionMatrixBuffer: GPUBuffer;
+  colorBuffer: GPUBuffer;
 
   viewProjectionBindGroup: GPUBindGroup;
+  fillColorBindGroup: GPUBindGroup;
   pipeline: GPURenderPipeline;
+
+  fillColor = vec4.create(1.0, 1.0, 1.0, 1.0);
 
   constructor(
     device: GPUDevice,
@@ -67,8 +73,23 @@ export class BasicMaterial {
       ],
     });
 
+    const fillColorBindGroupLayout = this.device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX,
+          buffer: {
+            type: "uniform",
+          },
+        },
+      ],
+    });
+
     const pipelineLayout = this.device.createPipelineLayout({
-      bindGroupLayouts: [viewProjectionBindGroupLayout],
+      bindGroupLayouts: [
+        viewProjectionBindGroupLayout,
+        fillColorBindGroupLayout,
+      ],
     });
 
     this.viewProjectionBindGroup = this.device.createBindGroup({
@@ -78,6 +99,23 @@ export class BasicMaterial {
           binding: 0,
           resource: {
             buffer: this.viewProjectionMatrixBuffer,
+          },
+        },
+      ],
+    });
+
+    this.colorBuffer = BufferUtils.createUniformBuffer(
+      this.device,
+      this.fillColor,
+    );
+
+    this.fillColorBindGroup = this.device.createBindGroup({
+      layout: fillColorBindGroupLayout,
+      entries: [
+        {
+          binding: 0,
+          resource: {
+            buffer: this.colorBuffer,
           },
         },
       ],
@@ -94,5 +132,24 @@ export class BasicMaterial {
         count: 4,
       },
     });
+  }
+
+  public setBindGroups(passEncoder: GPURenderPassEncoder) {
+    passEncoder.setBindGroup(0, this.viewProjectionBindGroup);
+    passEncoder.setBindGroup(1, this.fillColorBindGroup);
+  }
+
+  public setFillColor(color: Vec4) {
+    this.fillColor = color;
+  }
+
+  public writeBuffers() {
+    this.device.queue.writeBuffer(
+      this.colorBuffer,
+      0,
+      this.fillColor.buffer,
+      this.fillColor.byteOffset,
+      this.fillColor.byteLength,
+    );
   }
 }

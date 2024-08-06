@@ -3,7 +3,7 @@ import { getPolygon } from "./drawables/Polygon";
 import { Rect } from "./drawables/Rect";
 import { getRect, getTriangle, ShapePath } from "./drawables/Shape";
 import { Camera } from "./entities/Camera";
-import { mat4, vec2, type Vec2 } from "wgpu-matrix";
+import { mat4, vec2, vec4, type Vec2 } from "wgpu-matrix";
 
 export type MouseEventOptions = {
   button: "left" | "right" | "middle";
@@ -173,6 +173,7 @@ export class Engine {
       if (this.editorMode === EditorMode.Pen) {
         if (!this.penObject) {
           this.penObject = new ShapePath(this.device, this.format, this.camera);
+          this.penObject.setFillColor(vec4.create(0.2, 0.2, 0.7, 1));
           this.penObject.path.moveTo(position);
           this.penObject.rebuild();
           this.addObject(this.penObject);
@@ -185,6 +186,7 @@ export class Engine {
         if (options.modifiers.ctrlKey) {
           this.penObject.path.close();
           this.penObject.rebuild();
+          this.penObject.setFillColor(vec4.create(1, 1, 1, 1));
           this.penObject = null;
         }
 
