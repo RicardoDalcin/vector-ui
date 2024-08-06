@@ -70,7 +70,7 @@ export class ShapePath implements Drawable {
     this.device = device;
     this.camera = camera;
 
-    this.boundingBox = new BoundingBox(new Float32Array(0));
+    this.boundingBox = new BoundingBox(new Float32Array(0), device, format);
     this.rebuild();
 
     this.uniformBuffer = BufferUtils.createUniformBuffer(
@@ -244,5 +244,7 @@ export class ShapePath implements Drawable {
         passEncoder.drawIndexed(indices.length);
       }
     }
+
+    this.boundingBox.draw(passEncoder, cameraMatrix);
   }
 }
