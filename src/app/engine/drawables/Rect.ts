@@ -26,6 +26,8 @@ export class Rect implements Drawable {
   height: number;
   rotation: number;
 
+  isSelected = false;
+
   constructor(device: GPUDevice, format: GPUTextureFormat, camera: Camera) {
     this.id = uuidv4();
 
@@ -115,6 +117,10 @@ export class Rect implements Drawable {
 
   public isPointInBoundingBox(point: Float32Array) {
     return this.isPointInShape(point);
+  }
+
+  public setIsSelected(isSelected: boolean) {
+    this.isSelected = isSelected;
   }
 
   draw(passEncoder: GPURenderPassEncoder) {

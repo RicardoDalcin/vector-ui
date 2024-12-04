@@ -4,7 +4,7 @@ import { type Camera } from "../entities/Camera";
 import { BasicMaterial } from "../materials/BasicMaterial/BasicMaterial";
 import { BufferUtils } from "../BufferUtils";
 import { Path } from "../vector/Path";
-import { mat4, type Vec2, vec2 } from "wgpu-matrix";
+import { mat4, type Vec2, vec2, type Vec4 } from "wgpu-matrix";
 import earcut from "earcut";
 import { type Drawable } from "./Drawable";
 import { BoundingBox } from "./Object";
@@ -57,6 +57,8 @@ export class ShapePath implements Drawable {
   path: Path;
   boundingBox: BoundingBox;
 
+  isSelected = false;
+
   position = vec2.create(0, 0);
   width = 1;
   height = 1;
@@ -70,7 +72,7 @@ export class ShapePath implements Drawable {
     this.device = device;
     this.camera = camera;
 
-    this.boundingBox = new BoundingBox(new Float32Array(0));
+    this.boundingBox = new BoundingBox(new Float32Array(0), device, format);
     this.rebuild();
 
     this.uniformBuffer = BufferUtils.createUniformBuffer(
@@ -217,6 +219,14 @@ export class ShapePath implements Drawable {
     return this.position;
   }
 
+  public setFillColor(color: Vec4) {
+    this.material.setFillColor(color);
+  }
+
+  public setIsSelected(isSelected: boolean) {
+    this.isSelected = isSelected;
+  }
+
   public draw(passEncoder: GPURenderPassEncoder) {
     const cameraMatrix = this.camera.getCameraMatrix();
     const asArrayBuffer = new Float32Array(cameraMatrix);
@@ -229,6 +239,8 @@ export class ShapePath implements Drawable {
       asArrayBuffer.byteLength,
     );
 
+    this.material.writeBuffers();
+
     passEncoder.setPipeline(this.material.pipeline);
 
     for (let i = 0; i < this.shapes.length; i++) {
@@ -240,9 +252,13 @@ export class ShapePath implements Drawable {
       if (shape && vertexBuffer && indexBuffer && indices) {
         passEncoder.setVertexBuffer(0, vertexBuffer);
         passEncoder.setIndexBuffer(indexBuffer, "uint16");
-        passEncoder.setBindGroup(0, this.material.viewProjectionBindGroup);
+        this.material.setBindGroups(passEncoder);
         passEncoder.drawIndexed(indices.length);
       }
+    }
+
+    if (this.isSelected) {
+      this.boundingBox.draw(passEncoder, cameraMatrix);
     }
   }
 }

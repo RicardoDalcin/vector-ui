@@ -132,17 +132,13 @@ export default function Home() {
 
   const [isMacOs, setIsMacOs] = useState(false);
 
-  useEffect(() => {
-    setIsMacOs(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
-  }, []);
-
   const changeEditorMode = useCallback((mode: EditorMode) => {
     engine.current?.setEditorMode(mode);
     setEditorMode(mode);
   }, []);
 
   const bindEngineEvents = useCallback(
-    (engine: Engine, container: HTMLElement) => {
+    (engine: Engine, container: HTMLElement, isMacOs: boolean) => {
       window.addEventListener("resize", () => engine.resize());
 
       window.addEventListener("keydown", (event) => {
@@ -196,7 +192,11 @@ export default function Home() {
             if (event.deltaY > 0) {
               engine.zoomOut();
             }
+
+            return;
           }
+
+          engine.pan(vec2.create(-event.deltaX, -event.deltaY));
         },
         { passive: false },
       );
@@ -230,7 +230,7 @@ export default function Home() {
         engine.onMouseMove(EventUtils.getMouseMoveEvent(event, canvas));
       });
     },
-    [changeEditorMode, isMacOs],
+    [changeEditorMode],
   );
 
   useEffect(() => {
@@ -246,6 +246,9 @@ export default function Home() {
     if (!canvas || !container) {
       return;
     }
+
+    const isMacOS = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+    setIsMacOs(isMacOS);
 
     const setup = async () => {
       engine.current = await setupEngine(canvas, {
@@ -267,7 +270,7 @@ export default function Home() {
           });
         },
       });
-      bindEngineEvents(engine.current, container);
+      bindEngineEvents(engine.current, container, isMacOS);
       engine.current.setEditorMode(EditorMode.Move);
     };
 
